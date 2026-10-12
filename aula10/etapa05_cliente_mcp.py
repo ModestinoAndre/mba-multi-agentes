@@ -2,17 +2,17 @@
 ETAPA 5 (continuação) -- Usando o MCP Server do RH de dois jeitos.
 
   ETAPA 5.3 -- por um AGENTE: o AtendenteRH com MCPServerStdio (o LLM escolhe a tool)
-  ETAPA 5.4 -- por CÓDIGO: chamar_mcp(tool, argumentos), sem LLM (é o que os nós do grafo e as tools dos
-               especialistas vão usar: quem decide a tool é o SEU código)
+  (PRONTO)  -- por CÓDIGO: chamar_mcp(tool, argumentos), sem LLM (é o que os nós do grafo e as tools dos
+               especialistas vão usar: quem decide a tool é o SEU código). Leia: é o mesmo cliente do aula6/desafio2.
 
 REFERÊNCIAS NAS AULAS
   aula5/exemplos/04_agente_mcp/agente.py      MCPServerStdio + Agent(mcp_servers=[...])        (5.3)
   aula5/exemplos/07_multiplos_mcp/agente.py   o agente escolhendo tools sozinho
-  aula6/desafio2/main.py                      chamar_mcp() com ClientSession, sem agente       <- o mais parecido (5.4)
+  aula6/desafio2/main.py                      chamar_mcp() com ClientSession, sem agente (o mesmo deste arquivo)
   aula5/exemplos/02_mcp_basico/cliente.py     cliente MCP "cru" (initialize, call_tool)
 
 Rodar:
-    python etapa05_cliente_mcp.py            # 5.4: chama as tools direto e registra o C1 duas vezes (idempotência)
+    python etapa05_cliente_mcp.py            # chama as tools direto e registra o C1 duas vezes (idempotência, 5.2)
     python etapa05_cliente_mcp.py --agente   # 5.3: o AtendenteRH responde usando o server
 
 Pronto quando: o agente responde "A equipe Cartório tem alguém de férias entre 12 e 26/07/2027?" usando o server, e
@@ -36,13 +36,20 @@ SERVER = str(PASTA / "etapa05_mcp_rh.py")
 
 
 async def chamar_mcp_async(tool: str, argumentos: dict) -> dict:
-    # ETAPA 5.4 -- suba o server por stdio, abra a sessão, initialize(), call_tool(tool, argumentos).
-    #   Se resposta.is_error: levante RuntimeError com o conteúdo.
-    #   Toda tool do etapa05_mcp_rh.py devolve UM dict: devolva json.loads(resposta.content[0].text).
-    #   Dica: StdioServerParameters(command=sys.executable, args=[SERVER]) e, para não poluir a tela,
-    #   stdio_client(params, errlog=open(os.devnull, "w")).
-    #   Referência: aula6/desafio2/main.py (chamar_mcp)
-    raise NotImplementedError("ETAPA 5.4: chamar_mcp_async")
+    """(PRONTO) Sobe o MCP Server por stdio, abre a sessão e chama UMA tool pelo nome. Como no aula6/desafio2/main.py.
+    Toda tool do etapa05_mcp_rh.py devolve UM dict, que chega como texto JSON no primeiro item de resposta.content."""
+    params = StdioServerParameters(command=sys.executable, args=[SERVER])
+    with open(os.devnull, "w") as silencio:                               # descarta os logs do server
+        async with stdio_client(params, errlog=silencio) as (leitura, escrita):
+            async with ClientSession(leitura, escrita) as sessao:
+                await sessao.initialize()                                  # o "aperto de mão" do protocolo
+                resposta = await sessao.call_tool(tool, argumentos)
+    # O erro é levantado DEPOIS de fechar a sessão (dentro dela, viraria um ExceptionGroup difícil de ler).
+    if resposta.is_error:
+        detalhe = resposta.content[0].text if resposta.content else ""
+        raise RuntimeError(f"a tool {tool!r} deu erro DENTRO do server ({detalhe}). "
+                           f"Para ver o traceback: npx @modelcontextprotocol/inspector python etapa05_mcp_rh.py")
+    return json.loads(resposta.content[0].text)
 
 
 def chamar_mcp(tool: str, argumentos: dict) -> dict:

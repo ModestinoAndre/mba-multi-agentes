@@ -2,7 +2,7 @@
 ETAPA 3 -- Guardrails de entrada (20 min).
 
 ESQUELETO: implemente as etapas na ordem (troque cada raise NotImplementedError pelo código da etapa).
-  ETAPA 3.1 -- encontrar_dado_sensivel(): regex de CPF e CID (sem LLM)
+  (PRONTO)  -- encontrar_dado_sensivel(): regex de CPF e CID (sem LLM): leia e use
   ETAPA 3.2 -- o agente classificador de escopo (output_type com nota 0..1 e motivo)
   ETAPA 3.3 -- nota_escopo(): roda o classificador e devolve (nota, motivo)
   ETAPA 3.4 -- os dois @input_guardrail, presos ao extrator
@@ -40,17 +40,18 @@ MODELO = configurar()
 
 LIMIAR = 0.7  # nota a partir da qual o pedido é bloqueado (ajuste olhando as notas dos casos)
 
-# ETAPA 3.1 -- as expressões regulares
-#   CPF: 000.000.000-00 (pontos e traço opcionais)
-#   CID: uma letra maiúscula + 2 dígitos, com ponto e 1 dígito opcionais (F32, F32.1). Use \b nas bordas.
-RE_CPF = None  # TODO ETAPA 3.1: re.compile(...)
-RE_CID = None  # TODO ETAPA 3.1: re.compile(...)
+# (PRONTO) As expressões regulares. O \b nas bordas evita casar pedaços de datas, valores e palavras.
+RE_CPF = re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b")  # 000.000.000-00, pontos e traço opcionais
+RE_CID = re.compile(r"\b[A-Z]\d{2}(?:\.\d)?\b")            # F32 ou F32.1
 
 
 def encontrar_dado_sensivel(texto: str) -> str | None:
-    # ETAPA 3.1 -- devolva "cpf", "cid" ou None
-    #   Referência: exercicios_resolvidos/aula4/ex11_guardrails.py (_RE_RG)
-    raise NotImplementedError("ETAPA 3.1: encontrar_dado_sensivel")
+    """(PRONTO) "cpf", "cid" ou None. Mesma ideia do _RE_RG de exercicios_resolvidos/aula4/ex11_guardrails.py."""
+    if RE_CPF.search(texto):
+        return "cpf"
+    if RE_CID.search(texto):
+        return "cid"
+    return None
 
 
 class AvaliacaoEscopo(BaseModel):

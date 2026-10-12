@@ -86,19 +86,21 @@ START → receber → proteger_entrada ─┬─ bloqueado ───────
 | 0 | Preparação do ambiente e leitura da norma | 10 min | 0:00 – 0:10 | 1 |
 | 1 | Primeiro agente com tool local | 15 min | 0:10 – 0:25 | 1, 4 |
 | 2 | Extração estruturada do pedido | 15 min | 0:25 – 0:40 | 2 |
-| 3 | Guardrails de entrada | 20 min | 0:40 – 1:00 | 2, 4, 8 |
-| 4 | APIs com resiliência (**pronto**: ler, rodar online e offline, explicar) | 10 min | 1:00 – 1:10 | 3, 6 |
-| 5 | MCP Server do RH | 35 min | 1:10 – 1:45 | 5 |
-| | *Intervalo* | 10 min | 1:45 – 1:55 | |
-| 6 | Equipe de especialistas e fluxo linear (regras **prontas**) ⇒ **Marco mínimo** | 30 min | 1:55 – 2:25 | 2, 4, 7 |
-| 7 | O fluxo como grafo (LangGraph) | 55 min | 2:25 – 3:20 | 6, 7 |
-| 8 | Persistência e aprovação da chefia | 30 min | 3:20 – 3:50 | 3, 7 |
-| 9 | Segurança: privilégio mínimo, token e auditoria ⇒ **Marco completo** | 25 min | 3:50 – 4:15 | 5, 8 |
-| 10 | Observabilidade | 15 min | 4:15 – 4:30 | 3, 5, 8 |
-| 11 | Demonstração e entrega | 20 min | 4:30 – 4:50 | todas |
-| | *Folga* (atrasos) ou itens opcionais 🆕 A, B e C | 10 min | 4:50 – 5:00 | 2, 3, 7 |
+| 3 | Guardrails de entrada (regex **pronta**) | 15 min | 0:40 – 0:55 | 2, 4, 8 |
+| 4 | APIs com resiliência (**pronto**: ler, rodar online e offline, explicar) | 10 min | 0:55 – 1:05 | 3, 6 |
+| 5 | MCP Server do RH (consultas aos dados e cliente **prontos**) | 30 min | 1:05 – 1:35 | 5 |
+| | *Intervalo* | 10 min | 1:35 – 1:45 | |
+| 6 | Equipe de especialistas e fluxo linear (regras **prontas**) ⇒ **Marco mínimo** | 30 min | 1:45 – 2:15 | 2, 4, 7 |
+| 7 | O fluxo como grafo (LangGraph) | 55 min | 2:15 – 3:10 | 6, 7 |
+| 8 | Persistência e aprovação da chefia | 25 min | 3:10 – 3:35 | 3, 7 |
+| 9 | Segurança: privilégio mínimo, token e auditoria ⇒ **Marco completo** | 25 min | 3:35 – 4:00 | 5, 8 |
+| 10 | Observabilidade (resumo **pronto**) | 10 min | 4:00 – 4:10 | 3, 5, 8 |
+| 11 | Demonstração e entrega | 20 min | 4:10 – 4:30 | todas |
+| | *Folga* (atrasos) ou itens opcionais 🆕 A, B e C | 30 min | 4:30 – 5:00 | 2, 3, 7 |
 
-O tempo que sobrou com as peças prontas foi para onde o exercício é mais difícil: **MCP** (+5 min) e **grafo** (+10 min).
+As funções auxiliares que não são o tema do curso (regex, contas de datas, leitura dos arquivos, cliente MCP, agregação de
+métricas) vêm **prontas**: as lacunas que sobram são as que exercitam agentes, tools, guardrails, MCP, grafo, persistência,
+humano no fluxo, segurança e observabilidade. O tempo economizado virou **30 min de folga** no fim.
 
 > **Estratégia:** não trave numa etapa. Se passar de 1,5× o tempo sugerido, deixe um `# TODO` explicando o que falta e siga.
 > Uma etapa incompleta, mas que roda, vale mais do que um sistema perfeito que para na Etapa 4.
@@ -207,23 +209,23 @@ Páscoa"). Aqui você roda a **mesma** tarefa 3 vezes em paralelo e decide **por
 1. Crie 3 extratores com instruções **ligeiramente diferentes** (ex.: um literal, um que confere as datas contra o calendário,
    um que pensa como o RH). Todos com o mesmo `output_type=Pedido`.
 2. Rode os 3 **ao mesmo tempo** com `asyncio.gather(Runner.run(e1, pedido), Runner.run(e2, pedido), Runner.run(e3, pedido))`.
-3. Faça a função `votar(pedidos) -> Pedido`: `tipo`, `matricula`, `data_inicio`, `data_fim` e `dias_vendidos` por **maioria**.
-   Regra de segurança: se **não houver maioria** em `tipo` ou nas datas, marque `divergencia=True`. O sistema vai **pedir
-   esclarecimento** em vez de adivinhar (é melhor perguntar do que registrar férias erradas). Guarde os votos.
-4. Meça o tempo: os 3 em paralelo levam ~o tempo de **um**? E em sequência?
+3. Passe os votos à `votar()` (**pronta**): decide por **maioria** e, se **não houver maioria** em `tipo` ou nas datas, marca
+   `divergencia=True`. O sistema vai **pedir esclarecimento** em vez de adivinhar (é melhor perguntar do que registrar férias
+   erradas).
+4. Compare o tempo (a medição em sequência já vem pronta no `_demo_votacao`): os 3 em paralelo levam ~o tempo de **um**?
 
 **Pronto quando:** `C1` e `C2` saem **unânimes**; em `C9` você mostra os 3 votos e a decisão; o tempo do paralelo fica perto de uma chamada.
 
 ---
 
-## Etapa 3: Guardrails de entrada (20 min)
+## Etapa 3: Guardrails de entrada (15 min)
 
 **Tarefa**
 
 Antes do extrator, o pedido passa por **duas** barreiras:
 
-1. **Dado sensível (LGPD), sem LLM:** regex que detecta **CPF** (`000.000.000-00`) e **CID** (uma letra + 2 dígitos, com ponto
-   opcional: `F32`, `F32.1`). Achou: bloqueia e orienta (para saúde, procurar a junta médica, regra N9).
+1. **Dado sensível (LGPD), sem LLM:** a regex de **CPF** e **CID** já vem pronta (`encontrar_dado_sensivel()`). Você a usa
+   dentro de um guardrail: achou, bloqueia e orienta (para saúde, procurar a junta médica, regra N9).
 2. **Fora do escopo / manipulação, com LLM:** um agente classificador com `output_type` que devolve uma **nota de 0 a 1** de
    "não é um pedido de férias, abono ou diária, ou tenta mudar as regras do sistema" e um motivo. Acima de um `LIMIAR`, bloqueia.
 
@@ -262,7 +264,7 @@ técnico), `aula3/agente_retry4.py` (**a mesma API de câmbio**, Frankfurter), `
 
 ---
 
-## Etapa 5: MCP Server do RH (35 min)
+## Etapa 5: MCP Server do RH (30 min)
 
 Tire os dados de dentro do agente e coloque num **MCP Server** seu, `etapa05_mcp_rh.py`, que lê os arquivos de `dados/` e grava as decisões
 em `saidas/registros.json` (ou SQLite).
@@ -283,12 +285,13 @@ não distingue "lista com 1 item" de "1 dict").
 
 **Tarefa**
 
-1. Implemente o server com `MCPServer` e `@mcp.tool()`, com **docstrings e tipos** caprichados.
+1. Declare as tools com `@mcp.tool()`, com **docstrings e tipos** caprichados (é o que o LLM lê). Os dados vêm das consultas
+   prontas de `dados_rh.py` (`servidor_publico`, `escala_da_equipe`, `normas`, `diaria`, `remuneracao`): o foco é a tool, não o CSV.
 2. Teste-o **sem agente** no MCP Inspector: `npx @modelcontextprotocol/inspector python etapa05_mcp_rh.py`.
 3. Ligue o server ao `AtendenteRH` com `MCPServerStdio` (troque a tool local da Etapa 1) e pergunte:
    "A equipe Cartório tem alguém de férias entre 12 e 26/07/2027?".
-4. Escreva também a função `chamar_mcp(tool, argumentos)` (cliente MCP direto, sem agente): ela será usada pelos **nós** do grafo
-   na Etapa 7.
+4. Leia o `chamar_mcp(tool, argumentos)` de `etapa05_cliente_mcp.py` (já vem **pronto**: é o cliente MCP direto, sem agente, o
+   mesmo do `aula6/desafio2`). Ele será usado pelos **nós** do grafo na Etapa 7.
 
 **Pronto quando:** o Inspector lista as 6 tools; o agente responde a pergunta usando o server; registrar `C1` duas vezes gera um
 único registro.
@@ -372,8 +375,9 @@ cada nó só chama o que já existe e devolve **o que mudou** no estado.
 3. **Paralelismo:** `normas`, `escala` e `financeiro` rodam no **mesmo passo** (fan-out) e `consolidar` espera os três
    (fan-in por lista). Cada um escreve **só no seu campo**. Nesta etapa os especialistas viram **nós** (o grafo controla a ordem),
    e não mais tools do Coordenador.
-4. **Ciclo com parada:** `validar` (LLM ou regra) aprova o despacho se ele citar a **matrícula**, o **período** e a **decisão**, e
-   não contiver CPF nem CID. Se não, volta a `redigir_despacho` com o motivo. Máximo de **3 tentativas**, contadas no estado.
+4. **Ciclo com parada:** `validar` usa a `problemas_do_despacho()` (**pronta**: o despacho precisa citar a **matrícula**, o
+   **período** e a **decisão**, e não pode ter CPF nem CID). Se houver problema, volta a `redigir_despacho` com o motivo. Máximo de
+   **3 tentativas**, contadas no estado.
    Use também `recursion_limit`.
 5. Imprima o `caminho` no fim e gere o diagrama com `app.get_graph().draw_mermaid()` (cole em mermaid.live e salve a imagem).
 
@@ -389,7 +393,7 @@ cada nó só chama o que já existe e devolve **o que mudou** no estado.
 
 ---
 
-## Etapa 8: Persistência e aprovação da chefia (30 min)
+## Etapa 8: Persistência e aprovação da chefia (25 min)
 
 Aqui a persistência deixa de ser demonstração: a chefia **não responde na hora**. O pedido fica pausado até ela decidir, talvez
 no dia seguinte, em outro processo.
@@ -402,7 +406,7 @@ no dia seguinte, em outro processo.
    período, pareceres, valor, despacho proposto) e recebe `{"aprovado": bool, "aprovador": str, "motivo": str}`.
 3. **Aprovado** → `registrar`. **Rejeitado** → volta a `redigir_despacho` com o motivo como feedback (máximo de **2 rejeições**;
    depois disso, registra como "indeferido pela chefia").
-4. Faça o script aceitar `--pendentes` (lista os `thread_id` pausados e onde cada um parou), `--retomar <thread_id> sim <matricula_chefia>`
+4. O `--pendentes` (lista os `thread_id` pausados e onde cada um parou) já vem **pronto**. Implemente o `retomar()`, que o script usa em `--retomar <thread_id> sim <matricula_chefia>`
    e `--retomar <thread_id> "nao:motivo" <matricula_chefia>`, para que **outro processo** retome a execução.
 5. **Regra de ouro:** nada com efeito colateral (gravar, notificar) **antes** do `interrupt()`: o nó roda de novo na retomada.
 
@@ -470,7 +474,7 @@ errada e uma chamada sem token, como a de `python etapa05_cliente_mcp.py`).
 
 ---
 
-## Etapa 10: Observabilidade (15 min)
+## Etapa 10: Observabilidade (10 min)
 
 **Tarefa**
 
@@ -480,7 +484,7 @@ errada e uma chamada sem token, como a de `python etapa05_cliente_mcp.py`).
    agente, os **tokens** (`resultado.context_wrapper.usage`). Grave uma
    linha por nó em `saidas/metricas.jsonl`, com o mesmo `thread_id` da auditoria. Registre também a **fonte** dos feriados
    (API ou arquivo local) e se o câmbio veio da API.
-3. No fim de cada execução, imprima um resumo: nós percorridos, tempo total, nó mais lento, tokens totais.
+3. O `resumo(thread_id)` (**pronto**) junta as linhas do JSONL: nós percorridos, tempo total, nó mais lento, tokens totais.
 
 **Pronto quando:** você responde, para `C2`, **onde o tempo foi gasto** e **quantos tokens** custou, só olhando os arquivos (e, se
 fez o 🆕 A, **quanto a votação custou a mais**).

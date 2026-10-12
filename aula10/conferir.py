@@ -92,6 +92,19 @@ def _onde(erro: Exception) -> str:
     return ""
 
 
+def mcp(tool: str, argumentos: dict) -> dict:
+    """chamar_mcp do aluno, traduzindo 'erro dentro do server' em PENDENTE quando a lacuna ainda não foi feita."""
+    from etapa05_cliente_mcp import chamar_mcp
+    try:
+        return chamar_mcp(tool, argumentos)
+    except RuntimeError as erro:
+        servidor = (PASTA / "etapa05_mcp_rh.py").read_text(encoding="utf-8")
+        for etapa in ("5.1", "5.2"):
+            if f'NotImplementedError("ETAPA {etapa}: {tool}")' in servidor:
+                raise NotImplementedError(f"ETAPA {etapa} ({tool} no etapa05_mcp_rh.py)") from erro
+        raise AssertionError(f"{erro}") from erro
+
+
 def igual(obtido, esperado, o_que: str) -> None:
     assert obtido == esperado, f"{o_que}: veio {obtido!r}, esperado {esperado!r}"
 
@@ -279,7 +292,7 @@ def etapa1(e: Etapa):
         assert "Bruno" in saida and "30" in saida, f"para 1002 esperava nome e saldo 30, veio: {saida[:120]}"
         assert "9500" not in saida and "salario" not in saida.lower(), "a tool está devolvendo o salário (não pode)"
         saida = asyncio.run(chamar(m.consultar_servidor, {"matricula": "9999"}))
-        assert "não encontrada" in saida.lower() or "nao encontrada" in saida.lower(), f"para 9999 veio: {saida[:120]}"
+        assert "encontrad" in saida.lower() or "erro" in saida.lower(), f"para 9999 veio: {saida[:120]}"
 
     def agente_1_2():
         import etapa01_agente as m
@@ -375,7 +388,7 @@ def etapa3(e: Etapa):
         assert n7 >= guardrails.LIMIAR, f"C7 (manipulação) teve nota {n7} < LIMIAR: dê exemplos de 'mudar as regras' ao classificador"
         return f"notas C1={n1} C4={n4} C7={n7}"
 
-    e.conferir("3.1 regex de CPF e CID (e nenhum falso positivo nos casos)", regex_3_1)
+    e.conferir("3.1 regex de CPF e CID (pronta: não mexa nela)", regex_3_1)
     e.conferir("3.2 classificador com output_type=AvaliacaoEscopo", classificador_3_2)
     e.conferir("3.4 os @input_guardrail (o de dado sensível dispara no C3 e não no C2)", guardrails_3_4)
     if COM_LLM:
@@ -396,39 +409,38 @@ def etapa4(e: Etapa):
 
 @etapa("5", "MCP Server do RH", "etapa05_mcp_rh.py e etapa05_cliente_mcp.py; aula6/desafio2/mcp_unidades.py")
 def etapa5(e: Etapa):
-    from etapa05_cliente_mcp import chamar_mcp
 
     def cliente_5_4():
-        servidor = chamar_mcp("consultar_servidor", {"matricula": "1002"})
+        servidor = mcp("consultar_servidor", {"matricula": "1002"})
         assert isinstance(servidor, dict), f"chamar_mcp deveria devolver um dict, veio {type(servidor).__name__}"
 
     def leitura_5_1():
-        s = chamar_mcp("consultar_servidor", {"matricula": "1002"})
+        s = mcp("consultar_servidor", {"matricula": "1002"})
         igual(s.get("nome"), "Bruno Castro", "consultar_servidor(1002).nome")
         assert "salario_base" not in s, "consultar_servidor está devolvendo o salário (não pode)"
-        igual(chamar_mcp("consultar_servidor", {"matricula": "9999"}).get("erro") is not None, True, "matrícula 9999 devolve erro")
-        esc = chamar_mcp("consultar_escala", {"equipe": "Cartório", "inicio": "2027-07-12", "fim": "2027-07-26"})
+        igual(mcp("consultar_servidor", {"matricula": "9999"}).get("erro") is not None, True, "matrícula 9999 devolve erro")
+        esc = mcp("consultar_escala", {"equipe": "Cartório", "inicio": "2027-07-12", "fim": "2027-07-26"})
         igual((esc.get("tamanho_equipe"), esc.get("limite_afastados"), len(esc.get("afastamentos", []))), (4, 1, 1),
               "consultar_escala(Cartório): tamanho, limite, afastamentos")
-        n = chamar_mcp("consultar_normas", {"tema": "diária"})
+        n = mcp("consultar_normas", {"tema": "diária"})
         igual([r["codigo"] for r in n.get("regras", [])], ["N7"], "consultar_normas('diária')")
-        d = chamar_mcp("tabela_diarias", {"tipo_destino": "exterior"})
+        d = mcp("tabela_diarias", {"tipo_destino": "exterior"})
         igual((d.get("moeda"), d.get("valor_diaria")), ("USD", 320.0), "tabela_diarias('exterior')")
-        igual(chamar_mcp("consultar_remuneracao", {"matricula": "1002"}).get("salario_base"), 9500.0, "consultar_remuneracao(1002)")
+        igual(mcp("consultar_remuneracao", {"matricula": "1002"}).get("salario_base"), 9500.0, "consultar_remuneracao(1002)")
 
     def escrita_5_2():
         base = {"protocolo": "conferir-5", "matricula": "1001", "tipo": "abono", "inicio": "2027-04-09", "fim": "2027-04-09",
                 "decisao": "deferido", "aprovador": "sistema", "despacho": "teste do conferir.py",
                 "token": os.getenv("TOKEN_REGISTRO", ""), "thread_id": "conferir-5"}
         try:
-            r1 = chamar_mcp("registrar_decisao", base)
-            r2 = chamar_mcp("registrar_decisao", base)
+            r1 = mcp("registrar_decisao", base)
+            r2 = mcp("registrar_decisao", base)
         finally:
             limpar_saidas()
         assert r1.get("sucesso"), f"a 1ª gravação falhou: {r1} (o TOKEN_REGISTRO do .env está certo?)"
         assert r2.get("sucesso") and r2.get("duplicado"), f"a 2ª gravação do mesmo protocolo deveria dizer duplicado: {r2}"
 
-    e.conferir("5.4 chamar_mcp devolve um dict", cliente_5_4)
+    e.conferir("chamar_mcp (pronto) fala com o seu server", cliente_5_4)
     e.conferir("5.1 as 5 tools de leitura", leitura_5_1)
     e.conferir("5.2 registrar_decisao grava e não duplica", escrita_5_2)
 
@@ -571,7 +583,6 @@ def etapa8(e: Etapa):
 
 @etapa("9", "Segurança (Marco completo)", "etapa05_mcp_rh.py e etapa07_grafo.py; aula5/exemplos/10_seguranca/server_seguro.py")
 def etapa9(e: Etapa):
-    from etapa05_cliente_mcp import chamar_mcp
     token = os.getenv("TOKEN_REGISTRO", "")
     base = {"protocolo": "conferir-9", "matricula": "1002", "tipo": "ferias", "inicio": "2027-04-12", "fim": "2027-04-26",
             "decisao": "deferido", "aprovador": "1010", "despacho": "teste do conferir.py", "token": token, "thread_id": "conferir-9"}
@@ -579,12 +590,12 @@ def etapa9(e: Etapa):
     def negacoes_9_2():
         try:
             casos = {
-                "sem token": chamar_mcp("registrar_decisao", {**base, "token": "errado"}),
-                "decisão fora do enum": chamar_mcp("registrar_decisao", {**base, "decisao": "aprovadissimo"}),
-                "autoaprovação (1002)": chamar_mcp("registrar_decisao", {**base, "aprovador": "1002"}),
-                "chefia errada (1011)": chamar_mcp("registrar_decisao", {**base, "aprovador": "1011"}),
+                "sem token": mcp("registrar_decisao", {**base, "token": "errado"}),
+                "decisão fora do enum": mcp("registrar_decisao", {**base, "decisao": "aprovadissimo"}),
+                "autoaprovação (1002)": mcp("registrar_decisao", {**base, "aprovador": "1002"}),
+                "chefia errada (1011)": mcp("registrar_decisao", {**base, "aprovador": "1011"}),
             }
-            certo = chamar_mcp("registrar_decisao", base)
+            certo = mcp("registrar_decisao", base)
         finally:
             teste_auditoria["linhas"] = [l for l in _linhas_auditoria() if '"conferir-9"' in l]
             limpar_saidas()
@@ -672,17 +683,42 @@ def etapa11(e: Etapa):
 # ===================================================================== opcionais
 @etapa("🆕A", "Votação em paralelo (opcional)", "etapa02_extracao.py")
 def opcional_a(e: Etapa):
-    def votar():
-        from etapa02_extracao import Pedido, votar as votar_aluno
+    def instrucoes_a1():
+        import etapa02_extracao as x
+        if not x.INSTRUCOES_VOTANTES:
+            raise NotImplementedError("🆕 A.1")
+        igual(len(set(x.INSTRUCOES_VOTANTES)), 3, "quantidade de instruções DIFERENTES em INSTRUCOES_VOTANTES")
+
+    def paralelo_a2():
+        import etapa02_extracao as x
         base = dict(tipo="ferias", matricula="1002", data_inicio="2027-04-12", data_fim="2027-04-26", dias_vendidos=10,
                     destino=None, tipo_destino=None, justificativa="x")
-        p = lambda **mudar: Pedido(**{**base, **mudar})  # noqa: E731
-        pedido, divergencia = votar_aluno([p(), p(), p(data_fim="2027-04-25")])
-        igual((pedido.data_fim, divergencia), ("2027-04-26", False), "2 de 3 iguais: maioria e sem divergência")
-        _, divergencia = votar_aluno([p(), p(data_inicio="2027-04-13"), p(data_inicio="2027-04-14")])
-        igual(divergencia, True, "3 datas diferentes: divergência")
+        chamados = []
 
-    e.conferir("🆕 A.3 votar(): maioria e divergência", votar)
+        class RunnerFixo:  # no lugar do LLM: cada extrator "vota" uma data_fim diferente só no 3º voto
+            @staticmethod
+            async def run(agente, texto, **kwargs):
+                chamados.append(agente.instructions)
+                fim = "2027-04-25" if len(chamados) == 3 else "2027-04-26"  # decidido ANTES do await
+                await asyncio.sleep(0.2)  # se for em paralelo, os 3 juntos levam ~0,2 s
+                return SimpleNamespace(final_output=x.Pedido(**{**base, "data_fim": fim}))
+
+        real, x.Runner = x.Runner, RunnerFixo
+        try:
+            import time
+            inicio = time.perf_counter()
+            pedido, divergencia, votos = asyncio.run(x.extrair_com_votacao("texto qualquer"))
+            segundos = time.perf_counter() - inicio
+        finally:
+            x.Runner = real
+        igual(len(votos), 3, "quantidade de votos")
+        igual(len(set(chamados)), 3, "extratores com instruções diferentes chamados")
+        igual((pedido.data_fim, divergencia), ("2027-04-26", False), "decisão por maioria (2 de 3)")
+        assert segundos < 0.5, f"os 3 extratores levaram {segundos:.1f}s: estão rodando em SEQUÊNCIA, não em paralelo (asyncio.gather)"
+        return f"3 votos em {segundos:.2f}s"
+
+    e.conferir("🆕 A.1 três instruções diferentes", instrucoes_a1)
+    e.conferir("🆕 A.2 os 3 extratores rodam em paralelo e a votação decide", paralelo_a2)
 
 
 @etapa("🆕B", "Hooks que barram (opcional)", "etapa10_governanca.py")

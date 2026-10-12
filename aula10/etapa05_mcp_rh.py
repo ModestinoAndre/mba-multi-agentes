@@ -5,8 +5,8 @@ Os dados saem de dentro do agente e passam a morar num PROCESSO SEPARADO, que fa
 nós do grafo (Etapa 7, via cliente_mcp.chamar_mcp) só enxergam as tools abaixo: nunca os CSVs.
 
 ESQUELETO: implemente as etapas na ordem (troque cada raise NotImplementedError pelo código da etapa).
-  ETAPA 5.1 -- as 5 tools de LEITURA (docstrings e tipos caprichados: é o "schema" que o LLM lê).
-               Convenção deste server: toda tool devolve UM dict (veja o comentário em consultar_normas).
+  ETAPA 5.1 -- as 5 tools de LEITURA: declare cada uma com @mcp.tool(), escreva a DOCSTRING (é o "schema" que o LLM
+               lê) e devolva o resultado da consulta pronta de dados_rh.py. Toda tool devolve UM dict.
   ETAPA 5.2 -- a tool de ESCRITA registrar_decisao, IDEMPOTENTE (protocolo repetido não duplica)
   ETAPA 9.2 -- autorização NO SERVER: token + regra N8 (chefia certa, nunca o próprio servidor) + decisão num enum
   ETAPA 9.3 -- auditoria: toda tentativa de escrita (ALLOW ou DENY) vira uma linha em saidas/auditoria.jsonl
@@ -30,7 +30,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from mcp.server.mcpserver import MCPServer
 
-from dados_rh import PASTA, SAIDAS, carregar_diarias, carregar_escala, carregar_servidores, normas
+from dados_rh import PASTA, SAIDAS, carregar_servidores, diaria, escala_da_equipe, normas, remuneracao, servidor_publico
 
 # O server roda como SUBPROCESSO: ele não herda o ambiente de quem o chamou. Por isso carrega o .env sozinho
 # (mesmo cuidado de aula5/exemplos/02_mcp_basico/database.py).
@@ -61,16 +61,15 @@ def _gravar_registros(registros: dict) -> None:
 @mcp.tool()
 def consultar_servidor(matricula: str) -> dict:
     """TODO ETAPA 5.1: docstring. Cadastro de UM servidor, SEM o salário."""
-    # Mesmo conteúdo da tool da Etapa 1, agora no server. Matrícula inexistente: {"erro": "matrícula não encontrada"}.
+    # Devolva servidor_publico(matricula) (dados_rh.py): já tira o salário e trata matrícula inexistente.
     raise NotImplementedError("ETAPA 5.1: consultar_servidor")
 
 
 @mcp.tool()
 def consultar_escala(equipe: str, inicio: str, fim: str) -> dict:
     """TODO ETAPA 5.1: docstring. Afastamentos da equipe que se sobrepõem ao período e o limite da regra N5."""
-    # Devolva {"equipe", "tamanho_equipe", "limite_afastados" (30% arredondado p/ baixo, mínimo 1),
-    #          "afastamentos": [...os de carregar_escala() da equipe com sobreposição de datas...]}
-    # Duas faixas [a1, a2] e [b1, b2] se sobrepõem quando a1 <= b2 e b1 <= a2 (dá para comparar as strings AAAA-MM-DD).
+    # Devolva escala_da_equipe(equipe, inicio, fim) (dados_rh.py). Na docstring, diga o formato das datas (AAAA-MM-DD)
+    # e o que volta (tamanho da equipe, limite de afastados e os afastamentos que se sobrepõem ao período).
     raise NotImplementedError("ETAPA 5.1: consultar_escala")
 
 
@@ -86,12 +85,14 @@ def consultar_normas(tema: str) -> dict:
 @mcp.tool()
 def tabela_diarias(tipo_destino: str) -> dict:
     """TODO ETAPA 5.1: docstring. Moeda e valor da diária para capital, interior ou exterior."""
+    # Devolva diaria(tipo_destino) (dados_rh.py).
     raise NotImplementedError("ETAPA 5.1: tabela_diarias")
 
 
 @mcp.tool()
 def consultar_remuneracao(matricula: str) -> dict:
     """[RESTRITA] TODO ETAPA 5.1: docstring. Salário-base de um servidor (só o Financeiro deve usar, ver 🆕 B)."""
+    # Devolva remuneracao(matricula) (dados_rh.py).
     raise NotImplementedError("ETAPA 5.1: consultar_remuneracao")
 
 
