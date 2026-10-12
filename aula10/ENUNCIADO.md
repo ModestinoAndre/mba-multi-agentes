@@ -72,6 +72,10 @@ START → receber → proteger_entrada ─┬─ bloqueado ───────
 | `dados/diarias.csv` | Valor da diária por tipo de destino (capital, interior, exterior em USD). |
 | `dados/feriados_2027.json` | Cópia local dos feriados nacionais de 2027, no formato da BrasilAPI (plano B quando a API cair). |
 | `dados/casos.py` | 12 pedidos de teste, cada um com o **caminho esperado** no grafo. |
+| `README.md` | **Comece por aqui:** como configurar o ambiente e usar o `conferir.py`. |
+| `configurar_ambiente.ps1` / `.sh` | Configura tudo de uma vez (venv, dependências, `.env`) e roda a verificação. |
+| `verificar_ambiente.py` | Diz o que falta no ambiente (Python, bibliotecas, `.env`, MCP, APIs, modelo). |
+| `conferir.py` | Confere o seu progresso etapa por etapa (`python conferir.py 7`), sem gastar tokens. |
 | `requirements.txt` | Dependências (as mesmas das Aulas 5 a 7). |
 | `.env.example` | Modelo do `.env` (provedor e token de escrita). |
 
@@ -102,7 +106,8 @@ O tempo que sobrou com as peças prontas foi para onde o exercício é mais dif�
 ## O esqueleto: um arquivo por etapa
 
 > **Comece pelo [`PASSO_A_PASSO.md`](PASSO_A_PASSO.md):** a ordem de cada lacuna, o exemplo das aulas para cada uma e as
-> **saídas esperadas** para você comparar com as suas.
+> **saídas esperadas** para você comparar com as suas. Ao fim de cada etapa, rode **`python conferir.py N`** para saber se ela
+> está completa.
 
 O código já vem com a **estrutura pronta** e lacunas marcadas, no mesmo estilo dos exemplos da Aula 7: cada lacuna é um
 comentário `# ETAPA n.m` com um `raise NotImplementedError("ETAPA n.m: ...")`. Troque o `raise` pelo código da etapa e rode o
@@ -128,6 +133,7 @@ repete a referência mais próxima. Trechos marcados `(PRONTO)` não são o foco
 | `observabilidade.py` | 10 | tempo e tokens por nó, resumo de uma execução | `python observabilidade.py <thread_id>` |
 | `ENTREGA.md` | 0, 11 | o relatório (modelo pronto para preencher) | |
 | `PASSO_A_PASSO.md` | todas | nada: é o roteiro, com referências e saídas esperadas | |
+| `conferir.py`, `verificar_ambiente.py`, `configurar_ambiente.*` | (prontos) | nada: conferem o progresso e o ambiente | `python conferir.py [N]` |
 
 Os arquivos gerados (`registros.json`, `auditoria.jsonl`, `metricas.jsonl`, `checkpoints.db`) vão para `saidas/`.
 
@@ -137,14 +143,15 @@ Os arquivos gerados (`registros.json`, `auditoria.jsonl`, `metricas.jsonl`, `che
 
 **Tarefa**
 
-1. Crie e ative um ambiente virtual dentro de `aula10/` e instale o `requirements.txt`.
-2. Copie `.env.example` para `.env` e preencha o provedor (OpenAI ou Ollama).
+1. Configure o ambiente com `configurar_ambiente.ps1` (Windows) ou `configurar_ambiente.sh` (Linux/Mac): ele cria o `.venv`,
+   instala as dependências, cria o `.env` e roda o `verificar_ambiente.py`. A opção manual está no `README.md`.
+2. Confira que o `.env` tem a sua `OPENAI_API_KEY` (ou o Ollama configurado).
 3. O `provedor.py` já está nesta pasta (é o mesmo da Aula 7: trata OpenAI e Ollama e para com uma mensagem clara se faltar a chave).
 4. Leia `dados/normas.md`. Para cada regra (N1 a N10), anote: **quem verifica**? Uma função Python (regra objetiva), um agente
    (interpretação) ou um humano (decisão)? Essa tabela vai guiar as próximas etapas.
 
-**Pronto quando:** `python -c "import agents, langgraph, mcp; print('ok')"` imprime `ok`, `python dados_rh.py` lista os dados, e sua
-tabela N1–N10 está no `ENTREGA.md`.
+**Pronto quando:** `python verificar_ambiente.py` termina com `Resultado: tudo certo`, e sua tabela N1–N10 está no `ENTREGA.md`
+(`python conferir.py 0`).
 
 **Onde olhar:** `aula1/provedor.py` (a ideia do `configurar()`), `aula7/README.md` (instalação), `aula7/provedor.py`.
 

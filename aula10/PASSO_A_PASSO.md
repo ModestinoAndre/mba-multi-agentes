@@ -11,19 +11,18 @@ a lacuna estiver certa.
 | ✅ **Saída real** | Gerada rodando uma solução do exercício. Não depende do LLM. | Deve sair **igual** (só mudam data/hora de hoje e a ordem de linhas marcada como variável). |
 | 🔸 **Saída ilustrativa** | Depende do LLM: o texto muda de uma execução para outra e de um modelo para outro. | Compare a **estrutura** e os **valores-chave** (tipo, datas, bloqueado ou não), **nunca o texto**. |
 
-## Antes de começar (uma vez)
+## Antes de começar (uma vez, de preferência antes da aula)
 
-PowerShell, na pasta do projeto (ex.: `C:\pcdf`):
+Configure o ambiente com o script (detalhes e a opção manual no [`README.md`](README.md)):
 
 ```powershell
-cd aula10
-python -m venv .venv
-.venv\Scripts\Activate.ps1          # Linux/Mac: source .venv/bin/activate
-python -m pip install -r requirements.txt
-copy .env.example .env              # Linux/Mac: cp .env.example .env
+cd C:\pcdf\aula10                                                   # ou onde estiver o seu clone
+powershell -ExecutionPolicy Bypass -File .\configurar_ambiente.ps1   # Linux/Mac: bash configurar_ambiente.sh
+.venv\Scripts\Activate.ps1                                          # Linux/Mac: source .venv/bin/activate
 ```
 
-Abra o `.env` e preencha `OPENAI_API_KEY` (ou configure o Ollama) e **troque o `TOKEN_REGISTRO`** por um valor seu.
+Ele cria o `.venv`, instala tudo, cria o `.env` (com um `TOKEN_REGISTRO` aleatório), pede a sua `OPENAI_API_KEY` e termina
+rodando o `verificar_ambiente.py`. Só comece quando ele disser `Resultado: tudo certo`.
 
 **Rode tudo de dentro de `aula10/`.** Os comandos abaixo assumem isso.
 
@@ -41,31 +40,37 @@ Remove-Item saidas\registros.json, saidas\auditoria.jsonl, saidas\checkpoints.db
 **Como funciona cada lacuna:** procure `# ETAPA n.m` no arquivo, apague o `raise NotImplementedError("ETAPA n.m: ...")` e
 escreva o código. Rodar o arquivo antes de terminar mostra `NotImplementedError: ETAPA n.m`: é esperado, e diz onde você está.
 
+**Ao terminar cada etapa, rode `python conferir.py N`** (N = número da etapa). Ele diz o que passou (`[OK]`), o que falta
+(`[PENDENTE]`) e o que está errado (`[FALHOU]`, com o que veio e o que era esperado). Sem `--llm`, não gasta tokens: nas Etapas 7
+a 10 as respostas do modelo são trocadas por respostas fixas, então ele confere só o **seu** código. No fim, `python conferir.py`
+mostra o resumo de todas as etapas e os marcos.
+
 ---
 
 ## Etapa 0: preparação (10 min)
 
 **Faça**
 
-1. Confira a instalação e os dados:
+1. Confira a instalação e os dados (se você usou o `configurar_ambiente`, isto já foi feito):
 
    ```powershell
-   python -c "import agents, langgraph, mcp; print('ok')"
+   python verificar_ambiente.py --sem-llm
    python dados_rh.py
    ```
 
 2. Leia `dados/normas.md` e preencha, no `ENTREGA.md`, a tabela "quem verifica cada regra" (função Python, agente ou humano).
 
-**Saída esperada** ✅
+**Saída esperada do `dados_rh.py`** ✅
 
 ```
-ok
 9 servidores; 3 afastamentos; 13 feriados locais; 10 regras
 [{'codigo': 'N1', 'tema': 'férias', 'regra': 'O servidor tem o saldo de férias do cadastro ... '}, {'codigo': 'N2', ...}, {'codigo': 'N3', ...}]
 ```
 
 **Dica para a tabela:** uma regra que é **conta** (saldo, datas, limite da escala) é função Python; uma que exige **interpretar**
 um texto é agente; uma que é **decisão de alguém** (N8, a chefia) é humano.
+
+**Conferir:** `python conferir.py 0`
 
 ---
 
@@ -92,6 +97,8 @@ Abono pecuniário é a conversão de parte das férias em dinheiro: o servidor "
 
 **Confira:** a linha `[tool] consultar_servidor` aparece **uma vez** (só na primeira pergunta). Se aparecer duas vezes, melhore as
 instruções; se não aparecer, melhore a docstring da tool. O salário **não** pode aparecer na resposta.
+
+**Conferir:** `python conferir.py 1`
 
 ---
 
@@ -125,6 +132,8 @@ C11_diaria_exterior
 
 **Confira:** o C5 **não** pode ter datas inventadas ("agosto de 2027" não é uma data exata). Se o modelo inventar, reforce na
 `description` dos campos de data: "null se o servidor não disse o dia exato".
+
+**Conferir:** `python conferir.py 2`
 
 ---
 
@@ -174,6 +183,8 @@ C10_zona_cinzenta    nota=0.50  PASSOU (tipo=outro)      <- anote esta nota: ela
 
 **Confira:** se o C7 passar, inclua nas instruções do classificador exemplos de "tentar mudar as regras" ("ignore as regras",
 "eu mesmo aprovo"). A nota do C10 deve ficar **no meio** (entre ~0,3 e ~0,7): se ficar perto de 0 ou de 1, ajuste os exemplos.
+
+**Conferir:** `python conferir.py 3`
 
 ---
 
@@ -231,6 +242,8 @@ mesmos feriados nacionais.
   os seus protocolos não baterem com os deste roteiro, o problema está nos campos que a **extração** devolveu (matrícula, tipo,
   datas), não neste arquivo.
 
+**Conferir:** `python conferir.py 4`
+
 ---
 
 ## Etapa 5: MCP Server do RH (`mcp_rh.py` e `cliente_mcp.py`, 35 min)
@@ -285,6 +298,8 @@ python cliente_mcp.py --agente
 [modelo] openai:gpt-4o-mini
 Sim. Na equipe Cartório, a matrícula 1006 está de férias de 05/07/2027 a 19/07/2027, o que se sobrepõe ao período de 12 a 26/07/2027.
 ```
+
+**Conferir:** `python conferir.py 5`
 
 ---
 
@@ -357,6 +372,8 @@ python etapa6_linear.py
 > **Depois da Etapa 9.2**, o C2 e o C11 deste fluxo linear passam a ser **negados** pelo server (`aprovador` = `pendente_chefia`,
 > que não é a chefia). É o comportamento certo: a aprovação de verdade só existe no grafo (Etapa 8).
 
+**Conferir:** `python conferir.py 6`
+
 ---
 
 ## Etapa 7: o grafo (`grafo.py`, 55 min)
@@ -400,6 +417,8 @@ python grafo.py C6_conflito_de_escala
   Olhe `erro_validacao` para saber por quê.
 - Rodou o C1 de novo e o resultado virou `duplicado`? Está certo: o protocolo `ae788d33` já foi gravado. Apague `saidas/` para
   ver `registrado` outra vez.
+
+**Conferir:** `python conferir.py 7`
 
 ---
 
@@ -488,6 +507,8 @@ python grafo.py --retomar C11_diaria_exterior sim 1011
   com efeito colateral pode vir antes do `interrupt()`.
 - Duas rejeições seguidas → o registro sai com `decisao` = `indeferido_pela_chefia`.
 
+**Conferir:** `python conferir.py 8`
+
 ---
 
 ## Etapa 9: segurança (`mcp_rh.py` e `grafo.py`, 25 min) ⇒ Marco completo
@@ -553,6 +574,8 @@ Uma linha completa, para comparar o formato:
 **Confira:** o `token` e o `despacho` **não** aparecem na auditoria. Volte também à saída do `python cliente_mcp.py` (Etapa 5): a
 última linha agora deve dizer `token inválido`.
 
+**Conferir:** `python conferir.py 9`
+
 ---
 
 ## Etapa 10: observabilidade (`governanca.py` e `observabilidade.py`, 15 min)
@@ -594,6 +617,8 @@ Resumo:
 **Confira:** se você fez o opcional 🆕 A, o nó `extrair` gasta cerca de **3 vezes** os tokens de um extrator só. Os nós
 sem LLM que chamam o MCP (`identificar_servidor`, `calcular_periodo`) levam cerca de 1 s cada, porque cada `chamar_mcp` sobe o
 server de novo: bom assunto para a pergunta "o que mudaria em produção?".
+
+**Conferir:** `python conferir.py 10`
 
 ---
 
@@ -664,12 +689,16 @@ Com o opcional 🆕 C ligado, aparecem também `proteger_entrada -. duvida .-> t
 e `triagem_humana -. recusa .-> recusar`. Cole a saída completa em <https://mermaid.live> para ver o desenho. Repare: `escala`, `financeiro` e `normas` entram em
 `consolidar` com setas **cheias** (fan-in por lista); as **pontilhadas** são as decisões (arestas condicionais).
 
+**Conferir:** `python conferir.py 11`
+
 ---
 
 ## Itens opcionais 🆕 (bônus: só depois do Marco completo)
 
 Os três itens abaixo usam um conceito já visto em aula num contexto novo. **Nenhum é necessário** para o sistema funcionar:
 faça-os só se terminou a Etapa 9 (ou a 11) e sobrou tempo. Cada um vale até +5 pontos de bônus.
+
+**Conferir:** `python conferir.py --opcionais` (ou só um: `python conferir.py 🆕A`, `🆕B`, `🆕C`).
 
 ### 🆕 A: votação em paralelo (`extracao.py`, +5 pontos)
 
