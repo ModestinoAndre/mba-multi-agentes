@@ -92,6 +92,9 @@ START → receber → proteger_entrada ─┬─ bloqueado ───────
 
 ## O esqueleto: um arquivo por etapa
 
+> **Comece pelo [`PASSO_A_PASSO.md`](PASSO_A_PASSO.md):** a ordem de cada lacuna, o exemplo das aulas para cada uma e as
+> **saídas esperadas** para você comparar com as suas.
+
 O código já vem com a **estrutura pronta** e lacunas marcadas, no mesmo estilo dos exemplos da Aula 7: cada lacuna é um
 comentário `# ETAPA n.m` com um `raise NotImplementedError("ETAPA n.m: ...")`. Troque o `raise` pelo código da etapa e rode o
 arquivo. Rodar antes de terminar mostra `NotImplementedError: ETAPA n.m`: é esperado, e diz onde você está.
@@ -115,6 +118,7 @@ repete a referência mais próxima. Trechos marcados `(PRONTO)` não são o foco
 | `grafo.py` | 7, 8, **🆕 C**, 9 | o grafo, a chefia, a triagem humana, o guardrail de saída | `python grafo.py C2_ferias_com_venda` |
 | `observabilidade.py` | 10 | tempo e tokens por nó, resumo de uma execução | `python observabilidade.py <thread_id>` |
 | `ENTREGA.md` | 0, 11 | o relatório (modelo pronto para preencher) | |
+| `PASSO_A_PASSO.md` | todas | nada: é o roteiro, com referências e saídas esperadas | |
 
 Os arquivos gerados (`registros.json`, `auditoria.jsonl`, `metricas.jsonl`, `checkpoints.db`) vão para `saidas/`.
 
