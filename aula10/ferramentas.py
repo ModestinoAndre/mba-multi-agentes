@@ -1,18 +1,19 @@
 """
-ETAPA 4 -- APIs externas com resiliência: feriados, câmbio, idempotência e limites (20 min).
+ETAPA 4 -- APIs externas com resiliência: feriados, câmbio, idempotência e limites. (PRONTO: leia, rode e entenda)
 
-Tudo aqui é Python puro (nenhuma chamada ao LLM, exceto rodar_com_limites): dá para testar sem chave de API.
+Este arquivo já vem implementado, para sobrar tempo para o MCP, o grafo e a segurança. Tudo aqui é técnica que você já
+viu na Aula 3 e na Aula 6; a sua tarefa é LER, RODAR (online e offline) e conseguir explicar cada função no ENTREGA.md.
+Tudo é Python puro (nenhuma chamada ao LLM, exceto rodar_com_limites): dá para testar sem chave de API.
 
-ESQUELETO: implemente as etapas na ordem (troque cada raise NotImplementedError pelo código da etapa).
-  ETAPA 4.1 -- texto_hoje(): a data REAL, para injetar nas instruções dos extratores (extracao.py)
-  ETAPA 4.2 -- get_json_com_retry(): timeout + até 3 tentativas + backoff exponencial
-  ETAPA 4.3 -- buscar_feriados(): BrasilAPI com plano B (dados/feriados_2027.json)
-  ETAPA 4.4 -- dias_uteis(), data_retorno(), inicio_permitido() (regra N3)
-  ETAPA 4.5 -- cotacao_usd_brl(): Frankfurter com o mesmo retry; falhou -> None ("a calcular")
-  ETAPA 4.6 -- gerar_protocolo(): SHA-256 dos campos normalizados (idempotência)
-  ETAPA 4.7 -- rodar_com_limites(): max_turns + asyncio.wait_for, tratando os dois erros separadamente
+  4.1 -- texto_hoje(): a data REAL, injetada nas instruções dos extratores (extracao.py já usa)
+  4.2 -- get_json_com_retry(): timeout + até 3 tentativas + backoff exponencial
+  4.3 -- buscar_feriados(): BrasilAPI com plano B (dados/feriados_2027.json) e cache
+  4.4 -- dias_uteis(), data_retorno(), inicio_permitido() (regra N3)
+  4.5 -- cotacao_usd_brl(): Frankfurter com o mesmo retry; falhou -> None ("a calcular")
+  4.6 -- gerar_protocolo(): SHA-256 dos campos normalizados (idempotência)
+  4.7 -- rodar_com_limites(): max_turns + asyncio.wait_for, com um erro para cada problema
 
-REFERÊNCIAS NAS AULAS
+REFERÊNCIAS NAS AULAS (compare cada função com o exemplo de origem)
   aula3/agente_retry.py                    4.1  injetar a data de hoje nas instruções (o modelo não tem relógio)
   aula3/agente_retry2.py                   4.2  retry com backoff; erro de NEGÓCIO (não repete) x erro TÉCNICO (repete)
   aula6/exemplos/11_grafo_real/main.py     4.3  buscar_feriados na MESMA API (BrasilAPI), com User-Agent e plano B local
@@ -21,11 +22,12 @@ REFERÊNCIAS NAS AULAS
   aula3/agente_parada3.py                  4.7  asyncio.wait_for (tempo) x MaxTurnsExceeded (loop)
 
 Rodar:
-    python ferramentas.py                  # testes das regras de data e do protocolo
-    FERIADOS_OFFLINE=1 python ferramentas.py   # simula a API fora do ar (PowerShell: $env:FERIADOS_OFFLINE="1")
+    python ferramentas.py                      # online: feriados da BrasilAPI e cotação real
+    $env:FERIADOS_OFFLINE = "1"                # PowerShell (Linux/Mac: export FERIADOS_OFFLINE=1)
+    python ferramentas.py                      # offline: 3 tentativas visíveis e plano B local
 
-Pronto quando: inicio_permitido("2027-04-30") é False (C12) e inicio_permitido("2027-04-12") é True (C2); offline, os
-feriados vêm do arquivo local depois de 3 tentativas visíveis; gerar_protocolo dá o mesmo valor para C1 e C8.
+Para pensar (e responder no ENTREGA.md): por que a espera DOBRA a cada tentativa? Por que o protocolo é um hash dos campos
+e não um número sequencial? O que aconteceria se buscar_feriados não tivesse cache?
 """
 import asyncio
 import hashlib
@@ -46,67 +48,89 @@ DIAS_PT = ["segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sex
 
 
 def texto_hoje() -> str:
-    # ETAPA 4.1 -- devolva algo como "sexta-feira, 09/10/2026 (2026-10-09)" usando date.today() e DIAS_PT.
-    #   Depois, acrescente esse texto a INSTRUCOES_EXTRATOR (extracao.py) e às instruções dos votantes (🆕 A).
-    #   Referência: aula3/agente_retry.py
-    raise NotImplementedError("ETAPA 4.1: texto_hoje")
+    """4.1 -- 'segunda-feira, 12/10/2026 (2026-10-12)'. O LLM não sabe que dia é hoje: quem sabe é o seu código."""
+    hoje = date.today()
+    return f"{DIAS_PT[hoje.weekday()]}, {hoje:%d/%m/%Y} ({hoje.isoformat()})"
 
 
 def get_json_com_retry(url: str, tentativas: int = 3, espera_base: float = 0.5, timeout: float = 5) -> dict | list:
-    # ETAPA 4.2 -- GET com urllib.request (envie o cabeçalho User-Agent: sem ele a BrasilAPI responde 403).
-    #   A cada falha TÉCNICA (urllib.error.URLError, TimeoutError, OSError): imprima "[retry] tentativa n falhou",
-    #   espere espera_base * 2**(n-1) segundos e tente de novo. Na última, levante a exceção.
-    #   Se a variável de ambiente FERIADOS_OFFLINE == "1", trate como falha técnica (para testar sem internet).
-    #   Referência: aula3/agente_retry2.py (get_temperatura_resiliente)
-    raise NotImplementedError("ETAPA 4.2: get_json_com_retry")
+    """4.2 -- GET com retry. Falha TÉCNICA (rede, timeout, HTTP 5xx) vale tentar de novo; na última, a exceção sobe."""
+    for n in range(1, tentativas + 1):
+        try:
+            if os.getenv("FERIADOS_OFFLINE") == "1":  # simula a internet fora do ar, para testar o plano B
+                raise urllib.error.URLError("offline")
+            pedido = urllib.request.Request(url, headers={"User-Agent": "curso-pcdf/1.0"})  # sem ele: HTTP 403
+            with urllib.request.urlopen(pedido, timeout=timeout) as resposta:
+                return json.load(resposta)
+        except (urllib.error.URLError, TimeoutError, OSError) as erro:
+            print(f"[retry] tentativa {n} falhou: {erro}")
+            if n == tentativas:
+                raise
+            time.sleep(espera_base * 2 ** (n - 1))  # backoff exponencial: 0.5 s, 1 s, 2 s...
 
 
 _CACHE_FERIADOS: dict[int, tuple[dict[str, str], str]] = {}
 
 
 def buscar_feriados(ano: int) -> tuple[dict[str, str], str]:
-    # ETAPA 4.3 -- devolva ({"2027-04-21": "Tiradentes", ...}, fonte), com fonte "brasilapi" ou "arquivo_local".
-    #   Use get_json_com_retry(URL_FERIADOS.format(ano=ano)); se falhar de vez, carregar_feriados_locais()
-    #   (o arquivo local só tem 2027: para outro ano, devolva {} e fonte "indisponivel").
-    #   Guarde o resultado em _CACHE_FERIADOS[ano] para não chamar a API a cada data.
-    #   Referência: aula6/exemplos/11_grafo_real/main.py (buscar_feriados)
-    raise NotImplementedError("ETAPA 4.3: buscar_feriados")
+    """4.3 -- ({"2027-04-21": "Tiradentes", ...}, fonte). fonte: "brasilapi", "arquivo_local" ou "indisponivel".
+
+    O cache evita chamar a API a cada data consultada (dias_uteis pergunta dia por dia)."""
+    if ano in _CACHE_FERIADOS:
+        return _CACHE_FERIADOS[ano]
+    try:
+        feriados = {f["date"]: f["name"] for f in get_json_com_retry(URL_FERIADOS.format(ano=ano))}
+        resultado = (feriados, "brasilapi")
+    except Exception:
+        # Plano B: a cópia local só tem 2027. Para outro ano, seguimos sem feriados (e a fonte avisa isso).
+        resultado = (carregar_feriados_locais(), "arquivo_local") if ano == 2027 else ({}, "indisponivel")
+    _CACHE_FERIADOS[ano] = resultado
+    return resultado
 
 
 def eh_dia_util(dia: date) -> bool:
-    """(PRONTO) Segunda a sexta e não feriado."""
+    """Segunda a sexta e não feriado."""
     feriados, _ = buscar_feriados(dia.year)
     return dia.weekday() < 5 and dia.isoformat() not in feriados
 
 
 def dias_uteis(inicio: str, fim: str) -> int:
-    # ETAPA 4.4 -- quantos dias úteis entre inicio e fim (AAAA-MM-DD), inclusive. Use eh_dia_util.
-    raise NotImplementedError("ETAPA 4.4: dias_uteis")
+    """4.4 -- Dias úteis entre inicio e fim (AAAA-MM-DD), inclusive."""
+    dia, ultimo, total = date.fromisoformat(inicio), date.fromisoformat(fim), 0
+    while dia <= ultimo:
+        total += eh_dia_util(dia)
+        dia += timedelta(days=1)
+    return total
 
 
 def data_retorno(fim: str) -> str:
-    # ETAPA 4.4 -- o primeiro dia útil DEPOIS de `fim` (AAAA-MM-DD).
-    raise NotImplementedError("ETAPA 4.4: data_retorno")
+    """4.4 -- O primeiro dia útil DEPOIS de `fim`."""
+    dia = date.fromisoformat(fim) + timedelta(days=1)
+    while not eh_dia_util(dia):
+        dia += timedelta(days=1)
+    return dia.isoformat()
 
 
 def inicio_permitido(inicio: str) -> bool:
-    # ETAPA 4.4 -- regra N3: as férias NÃO podem começar nos 2 dias que antecedem um feriado ou fim de semana.
-    #   Ou seja: o dia de início e os 2 dias seguintes precisam ser dias úteis.
-    raise NotImplementedError("ETAPA 4.4: inicio_permitido")
+    """4.4 -- Regra N3: as férias não podem começar nos 2 dias antes de feriado ou fim de semana.
+    Ou seja: o dia de início e os 2 dias seguintes precisam ser úteis (por isso quinta e sexta nunca podem)."""
+    dia = date.fromisoformat(inicio)
+    return all(eh_dia_util(dia + timedelta(days=k)) for k in range(3))
 
 
 def cotacao_usd_brl() -> float | None:
-    # ETAPA 4.5 -- get_json_com_retry(URL_CAMBIO)["rates"]["BRL"]; se falhar de vez, devolva None
-    #   (o Financeiro escreve "a calcular": o sistema SEGUE e NÃO inventa câmbio).
-    #   Referência: aula3/agente_retry4.py (consultar_cotacao)
-    raise NotImplementedError("ETAPA 4.5: cotacao_usd_brl")
+    """4.5 -- Cotação USD->BRL de hoje, ou None se a API falhar (o Financeiro escreve "a calcular": NÃO inventa câmbio)."""
+    try:
+        return get_json_com_retry(URL_CAMBIO)["rates"]["BRL"]
+    except Exception:
+        return None
 
 
 def gerar_protocolo(matricula: str, tipo: str, data_inicio: str | None, data_fim: str | None) -> str:
-    # ETAPA 4.6 -- normalize (strip, lower, None -> "") e junte com "|"; devolva os 8 primeiros caracteres do
-    #   sha256 em hexadecimal. O MESMO pedido gera o MESMO protocolo (C1 e C8).
-    #   Referência: aula3/agente_retry3.py (_chave_idempotencia)
-    raise NotImplementedError("ETAPA 4.6: gerar_protocolo")
+    """4.6 -- 8 primeiros caracteres do SHA-256 dos campos normalizados. O MESMO pedido gera o MESMO protocolo
+    (C1 e C8: 'ae788d33'), então gravar duas vezes não duplica: é a idempotência da Aula 3."""
+    bruto = "|".join((campo or "").strip().lower() for campo in (matricula, tipo, data_inicio, data_fim))
+    return hashlib.sha256(bruto.encode("utf-8")).hexdigest()[:8]
 
 
 class TempoEsgotado(Exception):
@@ -118,16 +142,18 @@ class LoopExcedido(Exception):
 
 
 async def rodar_com_limites(agente: Agent, entrada: str, max_turns: int = 8, timeout_s: float = 90, **kwargs):
-    # ETAPA 4.7 -- await asyncio.wait_for(Runner.run(agente, entrada, max_turns=max_turns, **kwargs), timeout=timeout_s)
-    #   asyncio.TimeoutError -> levante TempoEsgotado(...)   (o problema é TEMPO)
-    #   MaxTurnsExceeded     -> levante LoopExcedido(...)    (o problema é LOOP)
-    #   **kwargs repassa hooks=..., context=... (você vai usar hooks no 🆕 B).
-    #   Referência: aula3/agente_parada3.py (rodar_com_timeout)
-    raise NotImplementedError("ETAPA 4.7: rodar_com_limites")
+    """4.7 -- Runner.run com DOIS limites: tempo (wait_for) e voltas do loop (max_turns), cada um com o seu erro.
+    **kwargs repassa hooks=..., context=... para o Runner (o item opcional 🆕 B usa hooks)."""
+    try:
+        return await asyncio.wait_for(Runner.run(agente, entrada, max_turns=max_turns, **kwargs), timeout=timeout_s)
+    except asyncio.TimeoutError as erro:
+        raise TempoEsgotado(f"{agente.name} passou de {timeout_s}s") from erro
+    except MaxTurnsExceeded as erro:
+        raise LoopExcedido(f"{agente.name} passou de {max_turns} turnos") from erro
 
 
 def rodar_com_limites_sync(agente: Agent, entrada: str, **kwargs):
-    """(PRONTO) Versão síncrona, para usar dentro dos nós do grafo e no fluxo linear."""
+    """Versão síncrona, para usar dentro dos nós do grafo e no fluxo linear."""
     return asyncio.run(rodar_com_limites(agente, entrada, **kwargs))
 
 

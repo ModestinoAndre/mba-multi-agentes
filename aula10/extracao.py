@@ -1,10 +1,11 @@
 """
-ETAPA 2 -- Extração estruturada do pedido (15 min) e 🆕 A -- votação em paralelo (10 min).
+ETAPA 2 -- Extração estruturada do pedido (15 min) e 🆕 A -- votação em paralelo (OPCIONAL, bônus).
 
 ESQUELETO: implemente as etapas na ordem (troque cada raise NotImplementedError pelo código da etapa).
   ETAPA 2.1 -- complete o modelo Pydantic `Pedido` (campos + Field(description=...))
   ETAPA 2.2 -- criar_extrator(): um Agent com output_type=Pedido
   ETAPA 2.3 -- extrair(): roda UM extrator e devolve um Pedido
+  --- daqui para baixo é OPCIONAL (item 🆕 A, vale bônus). Pule se estiver sem tempo: o resto do sistema não depende dele.
   🆕 A.1    -- INSTRUCOES_VOTANTES: 3 instruções ligeiramente diferentes
   🆕 A.2    -- extrair_com_votacao(): os 3 extratores AO MESMO TEMPO (asyncio.gather)
   🆕 A.3    -- votar(): maioria por campo; sem maioria em tipo/datas -> divergencia=True
@@ -16,7 +17,7 @@ REFERÊNCIAS NAS AULAS
   aula7/exemplos/08_paralelismo/main.py    🆕 A: o CONCEITO de paralelismo (lá: tarefas DIFERENTES para ganhar tempo;
                                            aqui: a MESMA tarefa 3 vezes para ganhar confiabilidade)
   aula3/agente_parada3.py                  Runner.run (assíncrono) dentro de asyncio, como em A.2
-  aula3/agente_retry.py                    (volte aqui na Etapa 4.1 para injetar a data de hoje nas instruções)
+  aula3/agente_retry.py                    por que a data de hoje entra nas instruções (já feito abaixo, com texto_hoje())
 
 Rodar:
     python extracao.py            # extrai C1, C2, C5 e C11
@@ -35,6 +36,7 @@ from agents import Agent, Runner
 from pydantic import BaseModel, Field
 
 from dados.casos import CASOS
+from ferramentas import texto_hoje
 from provedor import configurar
 
 MODELO = configurar()
@@ -78,10 +80,10 @@ def criar_extrator(instrucoes: str, input_guardrails: list | None = None) -> Age
 
 
 INSTRUCOES_EXTRATOR = (
+    f"Hoje é {texto_hoje()}. "  # (PRONTO) a data real: o modelo não tem relógio (aula3/agente_retry.py)
     "Você extrai pedidos de servidores para o RH (férias, abono ou diária). "
     "TODO ETAPA 2.2: complete -- datas no formato AAAA-MM-DD, não invente o que não foi dito (use null), "
     "dias vendidos só se o servidor pedir explicitamente."
-    # TODO ETAPA 4.1: acrescente aqui a data de hoje (ferramentas.texto_hoje()), como em aula3/agente_retry.py
 )
 
 
@@ -91,8 +93,9 @@ def extrair(texto: str) -> Pedido:
     raise NotImplementedError("ETAPA 2.3: extrair")
 
 
-# ------------------------------------------------------------------ 🆕 A: votação
-# 🆕 A.1 -- três instruções LIGEIRAMENTE diferentes para a MESMA tarefa
+# ------------------------------------------------------------------ 🆕 A: votação (OPCIONAL, bônus)
+# Para ligar no grafo depois de pronto: USAR_VOTACAO = True em grafo.py.
+# 🆕 A.1 -- três instruções LIGEIRAMENTE diferentes para a MESMA tarefa (comece cada uma com f"Hoje é {texto_hoje()}. ")
 #   ex.: um extrator literal; um que confere as datas contra o calendário; um que "pensa como o RH".
 INSTRUCOES_VOTANTES: list[str] = []  # TODO 🆕 A.1: preencha com 3 strings
 
