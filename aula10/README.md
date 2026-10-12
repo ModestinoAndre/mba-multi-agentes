@@ -87,7 +87,7 @@ Saída esperada (resumida):
 4) Dados do exercício
   [OK]    9 servidores, 3 afastamentos, 13 feriados locais, 10 regras
 5) MCP Server sobe e lista as tools (sem chamar nenhuma)
-  [OK]    mcp_rh.py no ar com 6 tools: consultar_servidor, consultar_escala, ...
+  [OK]    etapa05_mcp_rh.py no ar com 6 tools: consultar_servidor, consultar_escala, ...
 6) Node.js (só para o MCP Inspector da Etapa 5)
   [OK]    npx encontrado: o MCP Inspector vai funcionar
 7) APIs externas (se falharem, o exercício usa o plano B)
@@ -125,7 +125,7 @@ linha do seu código). No fim aparece um resumo por etapa e se você atingiu o M
 Exemplo, no meio do exercício:
 
 ```
-Etapa 5: MCP Server do RH   (onde olhar: mcp_rh.py e cliente_mcp.py; aula6/desafio2/mcp_unidades.py)
+Etapa 5: MCP Server do RH   (onde olhar: etapa05_mcp_rh.py e etapa05_cliente_mcp.py; aula6/desafio2/mcp_unidades.py)
   [OK]       5.4 chamar_mcp devolve um dict
   [FALHOU]   5.1 as 5 tools de leitura: consultar_servidor está devolvendo o salário (não pode)
   [OK]       5.2 registrar_decisao grava e não duplica
@@ -140,4 +140,4 @@ Etapa 5: MCP Server do RH   (onde olhar: mcp_rh.py e cliente_mcp.py; aula6/desaf
 Nada do que o `conferir.py` grava fica em `saidas/`.
 
 > O `conferir.py` mostra se o código **faz o que o enunciado pede**. Ele não substitui rodar o sistema de verdade com o LLM
-> (`python grafo.py --todos`) nem preencher o `ENTREGA.md`.
+> (`python etapa07_grafo.py --todos`) nem preencher o `ENTREGA.md`.

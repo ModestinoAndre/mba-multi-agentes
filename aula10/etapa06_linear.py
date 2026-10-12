@@ -13,8 +13,8 @@ REFERÊNCIAS NAS AULAS
   aula7/exemplos/02_agentes_especializados/main.py   cada especialista imprime o que fez: dá para saber quem fez o quê
 
 Rodar:
-    python etapa6_linear.py                 # C1, C2, C6 e C11
-    python etapa6_linear.py --governanca    # 🆕 B (opcional): os dois testes de bloqueio
+    python etapa06_linear.py                 # C1, C2, C6 e C11
+    python etapa06_linear.py --governanca    # 🆕 B (opcional): os dois testes de bloqueio
 
 Pronto quando: C1, C2 e C11 são gravados com protocolo, C6 vira indeferimento com sugestão de datas, e você sabe dizer
 qual agente escreveu cada parte. (Opcional) no --governanca: a tool restrita NÃO executa e o C2 para no orçamento.
@@ -25,15 +25,15 @@ import sys
 
 from agents import RunHooks
 
-import agentes
-from cliente_mcp import chamar_mcp
+import etapa06_agentes as agentes
+from etapa05_cliente_mcp import chamar_mcp
 from dados.casos import CASOS
-from extracao import extrair
-from ferramentas import gerar_protocolo, rodar_com_limites_sync
-from governanca import Governanca, LimiteExcedido
-from guardrails import encontrar_dado_sensivel, nota_escopo, LIMIAR, MENSAGENS
+from etapa02_extracao import extrair
+from etapa04_ferramentas import gerar_protocolo, rodar_com_limites_sync
+from etapa10_governanca import Governanca, LimiteExcedido
+from etapa03_guardrails import encontrar_dado_sensivel, nota_escopo, LIMIAR, MENSAGENS
 from provedor import configurar
-from regras import precisa_chefia, resumo_periodo, violacoes_objetivas
+from etapa06_regras import precisa_chefia, resumo_periodo, violacoes_objetivas
 
 MODELO = configurar()
 

@@ -17,7 +17,7 @@ REFERÊNCIAS NAS AULAS
   aula8/exemplos/04_prompt_injection/1_codigo_pronto/main.py   por que "ignore as regras" não se resolve só no prompt
 
 Rodar:
-    python guardrails.py
+    python etapa03_guardrails.py
 
 Pronto quando: C3, C4 e C7 são bloqueados com mensagens diferentes; C1 e C2 passam. Anote a nota do C10 (🆕 C).
 """
@@ -96,7 +96,7 @@ MENSAGENS = {
 
 
 def main() -> None:
-    from extracao import INSTRUCOES_EXTRATOR, criar_extrator
+    from etapa02_extracao import INSTRUCOES_EXTRATOR, criar_extrator
 
     extrator = criar_extrator(INSTRUCOES_EXTRATOR, input_guardrails=[barrar_dado_sensivel, barrar_fora_do_escopo])
     for nome in ("C1_abono_simples", "C2_ferias_com_venda", "C3_dado_de_saude", "C4_fora_do_escopo",

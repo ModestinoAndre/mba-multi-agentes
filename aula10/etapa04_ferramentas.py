@@ -5,7 +5,7 @@ Este arquivo já vem implementado, para sobrar tempo para o MCP, o grafo e a seg
 viu na Aula 3 e na Aula 6; a sua tarefa é LER, RODAR (online e offline) e conseguir explicar cada função no ENTREGA.md.
 Tudo é Python puro (nenhuma chamada ao LLM, exceto rodar_com_limites): dá para testar sem chave de API.
 
-  4.1 -- texto_hoje(): a data REAL, injetada nas instruções dos extratores (extracao.py já usa)
+  4.1 -- texto_hoje(): a data REAL, injetada nas instruções dos extratores (etapa02_extracao.py já usa)
   4.2 -- get_json_com_retry(): timeout + até 3 tentativas + backoff exponencial
   4.3 -- buscar_feriados(): BrasilAPI com plano B (dados/feriados_2027.json) e cache
   4.4 -- dias_uteis(), data_retorno(), inicio_permitido() (regra N3)
@@ -22,9 +22,9 @@ REFERÊNCIAS NAS AULAS (compare cada função com o exemplo de origem)
   aula3/agente_parada3.py                  4.7  asyncio.wait_for (tempo) x MaxTurnsExceeded (loop)
 
 Rodar:
-    python ferramentas.py                      # online: feriados da BrasilAPI e cotação real
+    python etapa04_ferramentas.py                      # online: feriados da BrasilAPI e cotação real
     $env:FERIADOS_OFFLINE = "1"                # PowerShell (Linux/Mac: export FERIADOS_OFFLINE=1)
-    python ferramentas.py                      # offline: 3 tentativas visíveis e plano B local
+    python etapa04_ferramentas.py                      # offline: 3 tentativas visíveis e plano B local
 
 Para pensar (e responder no ENTREGA.md): por que a espera DOBRA a cada tentativa? Por que o protocolo é um hash dos campos
 e não um número sequencial? O que aconteceria se buscar_feriados não tivesse cache?

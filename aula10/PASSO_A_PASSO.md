@@ -74,7 +74,7 @@ um texto é agente; uma que é **decisão de alguém** (N8, a chefia) é humano.
 
 ---
 
-## Etapa 1: primeiro agente com tool (`etapa1_agente.py`, 15 min)
+## Etapa 1: primeiro agente com tool (`etapa01_agente.py`, 15 min)
 
 | Lacuna | O que fazer | Onde olhar |
 |---|---|---|
@@ -83,7 +83,7 @@ um texto é agente; uma que é **decisão de alguém** (N8, a chefia) é humano.
 | 1.3 | `main()`: as duas perguntas com `Runner.run_sync` | `aula8/exemplos/02_agente_tool/main.py` (o agente decide quando chamar) |
 
 ```powershell
-python etapa1_agente.py
+python etapa01_agente.py
 ```
 
 **Saída esperada** 🔸
@@ -102,7 +102,7 @@ instruções; se não aparecer, melhore a docstring da tool. O salário **não**
 
 ---
 
-## Etapa 2: extração estruturada (`extracao.py`, 15 min)
+## Etapa 2: extração estruturada (`etapa02_extracao.py`, 15 min)
 
 | Lacuna | O que fazer | Onde olhar |
 |---|---|---|
@@ -111,7 +111,7 @@ instruções; se não aparecer, melhore a docstring da tool. O salário **não**
 | 2.3 | `extrair()`: `Runner.run_sync(...).final_output` | `aula2/agente_output.py` |
 
 ```powershell
-python extracao.py
+python etapa02_extracao.py
 ```
 
 **Saída esperada** 🔸 (os valores dos campos abaixo são os **corretos**; a `justificativa` varia)
@@ -137,7 +137,7 @@ C11_diaria_exterior
 
 ---
 
-## Etapa 3: guardrails de entrada (`guardrails.py`, 20 min)
+## Etapa 3: guardrails de entrada (`etapa03_guardrails.py`, 20 min)
 
 | Lacuna | O que fazer | Onde olhar |
 |---|---|---|
@@ -167,7 +167,7 @@ todos os outros          None
 ```
 
 ```powershell
-python guardrails.py
+python etapa03_guardrails.py
 ```
 
 **Saída esperada** 🔸 (as notas variam; o que importa é **quem passa** e **por qual motivo bloqueia**)
@@ -188,14 +188,14 @@ C10_zona_cinzenta    nota=0.50  PASSOU (tipo=outro)      <- anote esta nota: ela
 
 ---
 
-## Etapa 4: APIs externas com resiliência (`ferramentas.py`, 10 min, **pronto**)
+## Etapa 4: APIs externas com resiliência (`etapa04_ferramentas.py`, 10 min, **pronto**)
 
-O `ferramentas.py` **já vem implementado**. Não há lacuna: **leia, rode e explique**. Tudo aqui é Python puro, então dá para testar
+O `etapa04_ferramentas.py` **já vem implementado**. Não há lacuna: **leia, rode e explique**. Tudo aqui é Python puro, então dá para testar
 **sem chave de API**. Para cada função, abra o exemplo de origem e compare:
 
 | Função | O que faz | Exemplo de origem nas aulas |
 |---|---|---|
-| `texto_hoje()` | a data real (já injetada nas instruções do extrator, em `extracao.py`) | `aula3/agente_retry.py` |
+| `texto_hoje()` | a data real (já injetada nas instruções do extrator, em `etapa02_extracao.py`) | `aula3/agente_retry.py` |
 | `get_json_com_retry()` | `User-Agent`, `timeout`, 3 tentativas, espera `0.5 * 2**(n-1)` | `aula3/agente_retry2.py` |
 | `buscar_feriados()` | BrasilAPI com plano B (arquivo local) e cache | `aula6/exemplos/11_grafo_real/main.py` (**a mesma API**) |
 | `dias_uteis()`, `data_retorno()`, `inicio_permitido()` | as contas de datas; N3: o dia de início e os 2 seguintes são úteis | (lógica de datas) |
@@ -208,7 +208,7 @@ campos e não um número sequencial? O que aconteceria se `buscar_feriados` não
 
 ```powershell
 $env:FERIADOS_OFFLINE = "1"
-python ferramentas.py
+python etapa04_ferramentas.py
 ```
 
 **Saída esperada, OFFLINE** ✅ (só a linha `hoje:` muda)
@@ -246,7 +246,7 @@ mesmos feriados nacionais.
 
 ---
 
-## Etapa 5: MCP Server do RH (`mcp_rh.py` e `cliente_mcp.py`, 35 min)
+## Etapa 5: MCP Server do RH (`etapa05_mcp_rh.py` e `etapa05_cliente_mcp.py`, 35 min)
 
 | Lacuna | O que fazer | Onde olhar |
 |---|---|---|
@@ -258,7 +258,7 @@ mesmos feriados nacionais.
 **1) Teste o server sozinho no MCP Inspector** (precisa de Node.js):
 
 ```powershell
-npx @modelcontextprotocol/inspector python mcp_rh.py
+npx @modelcontextprotocol/inspector python etapa05_mcp_rh.py
 ```
 
 No navegador: **Connect** → **Tools** → **List Tools**. Devem aparecer **6** tools: `consultar_servidor`, `consultar_escala`,
@@ -267,7 +267,7 @@ No navegador: **Connect** → **Tools** → **List Tools**. Devem aparecer **6**
 **2) Teste o cliente sem agente:**
 
 ```powershell
-python cliente_mcp.py
+python etapa05_cliente_mcp.py
 ```
 
 **Saída esperada, DEPOIS das Etapas 5.1, 5.2, 5.4, 9.2 e 9.3** ✅ (com `saidas/` vazia)
@@ -289,7 +289,7 @@ protocolo `teste001` já existe. Isso é esperado agora; volte a esta saída dep
 **3) Teste o agente com o server:**
 
 ```powershell
-python cliente_mcp.py --agente
+python etapa05_cliente_mcp.py --agente
 ```
 
 **Saída esperada** 🔸
@@ -305,14 +305,14 @@ Sim. Na equipe Cartório, a matrícula 1006 está de férias de 05/07/2027 a 19/
 
 ## Etapa 6: especialistas e fluxo linear (30 min) ⇒ Marco mínimo
 
-### 6.0: regras objetivas (`regras.py`, **pronto**): leia e rode
+### 6.0: regras objetivas (`etapa06_regras.py`, **pronto**): leia e rode
 
-O `regras.py` já vem implementado: `violacoes_objetivas()` (N1, N2, N3, N4, N5, N6) e `precisa_chefia()` (N8). Compare cada `if`
+O `etapa06_regras.py` já vem implementado: `violacoes_objetivas()` (N1, N2, N3, N4, N5, N6) e `precisa_chefia()` (N8). Compare cada `if`
 com a sua tabela da Etapa 0 (faltou ou sobrou alguma regra?). A ideia de colocar a regra de negócio em Python, no meio de um fluxo
 com IA, é a mesma do `avaliar_risco` em `aula6/exemplos/11_grafo_real/main.py`.
 
 ```powershell
-python regras.py
+python etapa06_regras.py
 ```
 
 **Saída esperada** ✅ (com `$env:FERIADOS_OFFLINE = "1"` aparecem também linhas `[retry]` antes; sem ele, não)
@@ -336,7 +336,7 @@ Repare na N5: o próprio servidor é descartado da lista de afastamentos (senão
 | 6.4 | `processar()`: os 9 passos, imprimindo cada um | `aula6/exemplos/01_fluxo_linear/main.py` |
 
 ```powershell
-python etapa6_linear.py
+python etapa06_linear.py
 ```
 
 **Saída esperada** 🔸 (os textos variam; o **resultado** e o **protocolo** não)
@@ -376,7 +376,7 @@ python etapa6_linear.py
 
 ---
 
-## Etapa 7: o grafo (`grafo.py`, 55 min)
+## Etapa 7: o grafo (`etapa07_grafo.py`, 55 min)
 
 Faça na ordem abaixo: assim o grafo roda cedo e você testa caso a caso.
 
@@ -393,9 +393,9 @@ Faça na ordem abaixo: assim o grafo roda cedo e você testa caso a caso.
 > `aprovacao_chefia`. Deixe `USAR_VOTACAO` e `USAR_TRIAGEM_HUMANA` em `False` (são os opcionais 🆕 A e 🆕 C).
 
 ```powershell
-python grafo.py --mermaid
-python grafo.py C1_abono_simples
-python grafo.py C6_conflito_de_escala
+python etapa07_grafo.py --mermaid
+python etapa07_grafo.py C1_abono_simples
+python etapa07_grafo.py C6_conflito_de_escala
 ```
 
 **Saída esperada** ✅ (os caminhos não dependem do LLM, desde que a extração esteja certa)
@@ -422,7 +422,7 @@ python grafo.py C6_conflito_de_escala
 
 ---
 
-## Etapa 8: persistência e aprovação da chefia (`grafo.py`, 30 min)
+## Etapa 8: persistência e aprovação da chefia (`etapa07_grafo.py`, 30 min)
 
 | Lacuna | O que fazer | Onde olhar |
 |---|---|---|
@@ -434,19 +434,19 @@ python grafo.py C6_conflito_de_escala
 **1) O C2 pausa e o processo termina** ✅
 
 ```powershell
-python grafo.py C2_ferias_com_venda
+python etapa07_grafo.py C2_ferias_com_venda
 ```
 
 ```
 [C2_ferias_com_venda] caminho: receber -> proteger_entrada -> extrair -> identificar_servidor -> calcular_periodo -> escala -> financeiro -> normas -> consolidar -> redigir_despacho -> validar
 [C2_ferias_com_venda] PAUSADO em ('aprovacao_chefia',): Aprova o despacho?
-   retome com: python grafo.py --retomar C2_ferias_com_venda sim|"nao:motivo" <quem>
+   retome com: python etapa07_grafo.py --retomar C2_ferias_com_venda sim|"nao:motivo" <quem>
 ```
 
-**2) Quem está pausado** ✅ (depois de rodar `python grafo.py --todos`; a ordem das linhas pode variar)
+**2) Quem está pausado** ✅ (depois de rodar `python etapa07_grafo.py --todos`; a ordem das linhas pode variar)
 
 ```powershell
-python grafo.py --pendentes
+python etapa07_grafo.py --pendentes
 ```
 
 ```
@@ -467,9 +467,9 @@ C1_abono_simples: concluído
 **3) A chefia rejeita uma vez e depois aprova (em OUTRO processo)** ✅
 
 ```powershell
-python grafo.py C2_ferias_com_venda
-python grafo.py --retomar C2_ferias_com_venda "nao:confirme o valor da venda" 1010
-python grafo.py --retomar C2_ferias_com_venda sim 1010
+python etapa07_grafo.py C2_ferias_com_venda
+python etapa07_grafo.py --retomar C2_ferias_com_venda "nao:confirme o valor da venda" 1010
+python etapa07_grafo.py --retomar C2_ferias_com_venda sim 1010
 ```
 
 ```
@@ -483,7 +483,7 @@ python grafo.py --retomar C2_ferias_com_venda sim 1010
 **4) A diária no exterior, aprovada pela chefia certa (1011)** ✅
 
 ```powershell
-python grafo.py --retomar C11_diaria_exterior sim 1011
+python etapa07_grafo.py --retomar C11_diaria_exterior sim 1011
 ```
 
 ```
@@ -494,7 +494,7 @@ python grafo.py --retomar C11_diaria_exterior sim 1011
 **5) Retomar o que já terminou** ✅
 
 ```powershell
-python grafo.py --retomar C11_diaria_exterior sim 1011
+python etapa07_grafo.py --retomar C11_diaria_exterior sim 1011
 ```
 
 ```
@@ -511,7 +511,7 @@ python grafo.py --retomar C11_diaria_exterior sim 1011
 
 ---
 
-## Etapa 9: segurança (`mcp_rh.py` e `grafo.py`, 25 min) ⇒ Marco completo
+## Etapa 9: segurança (`etapa05_mcp_rh.py` e `etapa07_grafo.py`, 25 min) ⇒ Marco completo
 
 | Lacuna | O que fazer | Onde olhar |
 |---|---|---|
@@ -523,10 +523,10 @@ python grafo.py --retomar C11_diaria_exterior sim 1011
 **1) Autoaprovação e chefia errada** ✅
 
 ```powershell
-python grafo.py C2_ferias_com_venda
-python grafo.py --retomar C2_ferias_com_venda sim 1002
-python grafo.py C2_ferias_com_venda
-python grafo.py --retomar C2_ferias_com_venda sim 1011
+python etapa07_grafo.py C2_ferias_com_venda
+python etapa07_grafo.py --retomar C2_ferias_com_venda sim 1002
+python etapa07_grafo.py C2_ferias_com_venda
+python etapa07_grafo.py --retomar C2_ferias_com_venda sim 1011
 ```
 
 ```
@@ -540,7 +540,7 @@ python grafo.py --retomar C2_ferias_com_venda sim 1011
 **2) O C7 sem o guardrail de entrada** ✅ (o "eu aprovo" não aprova nada: as regras indeferem)
 
 ```powershell
-python grafo.py --sem-guardrail C7_autoaprovacao
+python etapa07_grafo.py --sem-guardrail C7_autoaprovacao
 ```
 
 ```
@@ -571,24 +571,24 @@ Uma linha completa, para comparar o formato:
 {"quando": "2026-10-12T13:49:11.003562", "thread_id": "", "quem": "sistema", "tool": "registrar_decisao", "protocolo": "teste001", "decisao_acesso": "DENY", "motivo": "token inválido", "parametros": {"matricula": "1001", "tipo": "abono", "inicio": "2027-04-09", "fim": "2027-04-09", "decisao": "deferido", "aprovador": "sistema", "thread_id": ""}}
 ```
 
-**Confira:** o `token` e o `despacho` **não** aparecem na auditoria. Volte também à saída do `python cliente_mcp.py` (Etapa 5): a
+**Confira:** o `token` e o `despacho` **não** aparecem na auditoria. Volte também à saída do `python etapa05_cliente_mcp.py` (Etapa 5): a
 última linha agora deve dizer `token inválido`.
 
 **Conferir:** `python conferir.py 9`
 
 ---
 
-## Etapa 10: observabilidade (`governanca.py` e `observabilidade.py`, 15 min)
+## Etapa 10: observabilidade (`etapa10_governanca.py` e `etapa10_observabilidade.py`, 15 min)
 
 | Lacuna | O que fazer | Onde olhar |
 |---|---|---|
-| 10.1 | Em `governanca.py`, `on_tool_end` e `on_agent_end` acrescentam a `self.eventos` (tool, argumentos, resultado, tokens); passe `hooks=Governanca()` nos `rodar_com_limites_sync` dos nós | `aula3/agente_hook2.py`, `aula5/exemplos/11_observabilidade/agente_observavel.py` |
+| 10.1 | Em `etapa10_governanca.py`, `on_tool_end` e `on_agent_end` acrescentam a `self.eventos` (tool, argumentos, resultado, tokens); passe `hooks=Governanca()` nos `rodar_com_limites_sync` dos nós | `aula3/agente_hook2.py`, `aula5/exemplos/11_observabilidade/agente_observavel.py` |
 | 10.2 | `medido()`: tempo por nó numa linha de `saidas/metricas.jsonl` | `aula8/exemplos/03_observabilidade/1_codigo_pronto/passo1_trace.py` (a ideia de span por etapa) |
 | 10.3 | `resumo(thread_id)` | (leitura do JSONL) |
 
 ```powershell
-python grafo.py C2_ferias_com_venda
-python observabilidade.py C2_ferias_com_venda
+python etapa07_grafo.py C2_ferias_com_venda
+python etapa10_observabilidade.py C2_ferias_com_venda
 ```
 
 **Saída esperada** 🔸 (os números variam; a **forma** não)
@@ -627,9 +627,9 @@ server de novo: bom assunto para a pergunta "o que mudaria em produção?".
 1. Apague `saidas/` e rode tudo:
 
    ```powershell
-   python grafo.py --todos
-   python grafo.py --retomar C2_ferias_com_venda sim 1010
-   python grafo.py --retomar C11_diaria_exterior sim 1011
+   python etapa07_grafo.py --todos
+   python etapa07_grafo.py --retomar C2_ferias_com_venda sim 1010
+   python etapa07_grafo.py --retomar C11_diaria_exterior sim 1011
    ```
 
 2. Preencha a tabela do `ENTREGA.md` e compare com a referência abaixo.
@@ -656,7 +656,7 @@ estiverem certas)
 instruções). Registre no `ENTREGA.md` o que aconteceu. Com os opcionais, o C9 sai por `divergencia` (🆕 A) e o C10 pausa em
 `triagem_humana` (🆕 C).
 
-**O diagrama** (`python grafo.py --mermaid`) ✅: o seu deve ter estes nós e estas arestas (a ordem das linhas pode variar):
+**O diagrama** (`python etapa07_grafo.py --mermaid`) ✅: o seu deve ter estes nós e estas arestas (a ordem das linhas pode variar):
 
 ```
 	__start__ --> receber;
@@ -700,7 +700,7 @@ faça-os só se terminou a Etapa 9 (ou a 11) e sobrou tempo. Cada um vale até +
 
 **Conferir:** `python conferir.py --opcionais` (ou só um: `python conferir.py 🆕A`, `🆕B`, `🆕C`).
 
-### 🆕 A: votação em paralelo (`extracao.py`, +5 pontos)
+### 🆕 A: votação em paralelo (`etapa02_extracao.py`, +5 pontos)
 
 | Lacuna | O que fazer | Onde olhar |
 |---|---|---|
@@ -710,7 +710,7 @@ faça-os só se terminou a Etapa 9 (ou a 11) e sobrou tempo. Cada um vale até +
 | A.4 | Medir o tempo dos 3 em sequência para o C2 | `aula7/exemplos/08_paralelismo/main.py` (medição de tempo) |
 
 ```powershell
-python extracao.py --votacao
+python etapa02_extracao.py --votacao
 ```
 
 **Saída esperada** 🔸
@@ -734,23 +734,23 @@ C9_divergencia  (2.4s, divergencia=True)
 paralelo: 2.3s | sequencial: 6.8s
 ```
 
-Para usar no grafo: `USAR_VOTACAO = True` em `grafo.py` (e, no `no_extrair`, chame `extrair_com_votacao`).
+Para usar no grafo: `USAR_VOTACAO = True` em `etapa07_grafo.py` (e, no `no_extrair`, chame `extrair_com_votacao`).
 
 **Confira:** C1 e C2 **unânimes**; o C9 é um pedido vago de propósito ("uns dez dias perto da Páscoa"): o normal é os votos
 discordarem nas datas e sair `divergencia=True`. O tempo em paralelo deve ficar perto do de **uma** chamada, e o sequencial,
 perto de **três**.
 
-### 🆕 B: hooks que barram (`governanca.py`, +5 pontos)
+### 🆕 B: hooks que barram (`etapa10_governanca.py`, +5 pontos)
 
 | Lacuna | O que fazer | Onde olhar |
 |---|---|---|
 | B.1 | `PERMISSOES` para Normas, Escala, Financeiro e Coordenador (os `tool_name` das `as_tool`) | `aula8/exemplos/06_excessive_agency/1_codigo_pronto/main.py` (o risco) |
 | B.2 | `on_tool_start`: conta; fora da lista ou acima de `max_tools` → `raise LimiteExcedido(...)` | `aula3/agente_hook2.py`, `aula3/agente_loop.py` (assinaturas dos métodos) |
 | B.3 | `on_llm_start`: idem para `max_llm` | `aula3/agente_hook3.py` |
-| B.4 | `testar_governanca()` em `etapa6_linear.py` | (contexto novo, sem exemplo) |
+| B.4 | `testar_governanca()` em `etapa06_linear.py` | (contexto novo, sem exemplo) |
 
 ```powershell
-python etapa6_linear.py --governanca
+python etapa06_linear.py --governanca
 ```
 
 **Saída esperada** 🔸 (as mensagens são suas; o que importa está em negrito abaixo)
@@ -775,9 +775,9 @@ b) C2 com MAX_TOOLS = 1
   um `UserError: Error running tool ...` em vez do seu `except`, a exceção não herda de `AgentsException` (já vem certo no
   esqueleto: não mude).
 
-### 🆕 C: o humano decide a entrada (`grafo.py`, +5 pontos)
+### 🆕 C: o humano decide a entrada (`etapa07_grafo.py`, +5 pontos)
 
-Ligue `USAR_TRIAGEM_HUMANA = True` em `grafo.py`: o nó `triagem_humana` só entra no grafo com ele ligado.
+Ligue `USAR_TRIAGEM_HUMANA = True` em `etapa07_grafo.py`: o nó `triagem_humana` só entra no grafo com ele ligado.
 
 | Lacuna | O que fazer | Onde olhar |
 |---|---|---|
@@ -785,7 +785,7 @@ Ligue `USAR_TRIAGEM_HUMANA = True` em `grafo.py`: o nó `triagem_humana` só ent
 | C.2 | `triagem_humana` com `interrupt()`, `rotear_triagem` e as arestas | `aula7/exemplos/06_human_in_the_loop/main.py` (o mecanismo), `aula7/desafio2/` (duas pessoas no mesmo fluxo) |
 
 ```powershell
-python grafo.py C10_zona_cinzenta
+python etapa07_grafo.py C10_zona_cinzenta
 ```
 
 **Saída esperada** ✅
@@ -793,13 +793,13 @@ python grafo.py C10_zona_cinzenta
 ```
 [C10_zona_cinzenta] caminho: receber -> proteger_entrada
 [C10_zona_cinzenta] PAUSADO em ('triagem_humana',): Este texto deve seguir como pedido ao RH?
-   retome com: python grafo.py --retomar C10_zona_cinzenta sim|"nao:motivo" <quem>
+   retome com: python etapa07_grafo.py --retomar C10_zona_cinzenta sim|"nao:motivo" <quem>
 ```
 
 **O atendente recusa, com orientação** ✅
 
 ```powershell
-python grafo.py --retomar C10_zona_cinzenta "nao:procure a junta médica ou peça licença para acompanhar familiar" rh
+python etapa07_grafo.py --retomar C10_zona_cinzenta "nao:procure a junta médica ou peça licença para acompanhar familiar" rh
 ```
 
 ```
@@ -811,8 +811,8 @@ python grafo.py --retomar C10_zona_cinzenta "nao:procure a junta médica ou peç
 **O atendente deixa seguir** (rode o C10 de novo antes, porque o anterior terminou):
 
 ```powershell
-python grafo.py C10_zona_cinzenta
-python grafo.py --retomar C10_zona_cinzenta "sim:tratar como abono" rh
+python etapa07_grafo.py C10_zona_cinzenta
+python etapa07_grafo.py --retomar C10_zona_cinzenta "sim:tratar como abono" rh
 ```
 
 ```
@@ -832,7 +832,7 @@ com a nota que você anotou na Etapa 3.
 
 | Sintoma | Causa provável | O que fazer |
 |---|---|---|
-| `NotImplementedError: ETAPA n.m` | Falta implementar aquela lacuna (às vezes de **outro** arquivo: o `guardrails.py` para na 2.2 se o extrator ainda não existe) | Implemente a etapa citada na mensagem |
+| `NotImplementedError: ETAPA n.m` | Falta implementar aquela lacuna (às vezes de **outro** arquivo: o `etapa03_guardrails.py` para na 2.2 se o extrator ainda não existe) | Implemente a etapa citada na mensagem |
 | `NotImplementedError: 🆕 ...` | Você ligou um item opcional (`USAR_VOTACAO`, `USAR_TRIAGEM_HUMANA` ou `--governanca`) sem implementá-lo | Volte a chave para `False` ou faça o item |
 | `SystemExit: PROVEDOR=openai exige OPENAI_API_KEY` | `.env` sem chave, ou você não está dentro de `aula10/` | Preencha o `.env` e rode de dentro de `aula10/` |
 | `HTTP Error 403` na BrasilAPI | Requisição sem `User-Agent` | Envie o cabeçalho (veja `aula6/exemplos/11_grafo_real/main.py`) |

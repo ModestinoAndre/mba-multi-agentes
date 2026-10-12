@@ -20,8 +20,8 @@ REFERÊNCIAS NAS AULAS
   aula3/agente_retry.py                    por que a data de hoje entra nas instruções (já feito abaixo, com texto_hoje())
 
 Rodar:
-    python extracao.py            # extrai C1, C2, C5 e C11
-    python extracao.py --votacao  # 🆕 A: C1, C2 e C9 com 3 votos e o tempo medido
+    python etapa02_extracao.py            # extrai C1, C2, C5 e C11
+    python etapa02_extracao.py --votacao  # 🆕 A: C1, C2 e C9 com 3 votos e o tempo medido
 
 Pronto quando: C2 sai com dias_vendidos=10, C11 com tipo_destino="exterior", C5 com matricula=None;
                na votação, C1/C2 unânimes e C9 mostrando os votos.
@@ -36,7 +36,7 @@ from agents import Agent, Runner
 from pydantic import BaseModel, Field
 
 from dados.casos import CASOS
-from ferramentas import texto_hoje
+from etapa04_ferramentas import texto_hoje
 from provedor import configurar
 
 MODELO = configurar()
@@ -94,7 +94,7 @@ def extrair(texto: str) -> Pedido:
 
 
 # ------------------------------------------------------------------ 🆕 A: votação (OPCIONAL, bônus)
-# Para ligar no grafo depois de pronto: USAR_VOTACAO = True em grafo.py.
+# Para ligar no grafo depois de pronto: USAR_VOTACAO = True em etapa07_grafo.py.
 # 🆕 A.1 -- três instruções LIGEIRAMENTE diferentes para a MESMA tarefa (comece cada uma com f"Hoje é {texto_hoje()}. ")
 #   ex.: um extrator literal; um que confere as datas contra o calendário; um que "pensa como o RH".
 INSTRUCOES_VOTANTES: list[str] = []  # TODO 🆕 A.1: preencha com 3 strings
