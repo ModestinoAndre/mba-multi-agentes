@@ -2,7 +2,7 @@
 ETAPA 6.0 -- As regras OBJETIVAS da norma, em Python puro (sem LLM). (PRONTO: leia, rode e entenda)
 
 Na Etapa 0 você classificou cada regra N1..N10: função Python, agente ou humano. As que são CONTA (saldo, datas,
-limite da escala) ficam aqui: um LLM pode errar uma soma, uma função não. O agente Normas (agentes.py) continua
+limite da escala) ficam aqui: um LLM pode errar uma soma, uma função não. O agente Normas (etapa06_agentes.py) continua
 útil para EXPLICAR as regras no despacho, mas quem decide "violou ou não" é este módulo.
 
 Este arquivo já vem implementado. Compare-o com a SUA tabela da Etapa 0: cada `if` abaixo é uma regra que você marcou
@@ -16,11 +16,11 @@ REFERÊNCIAS NAS AULAS
   aula6/desafio3/ENUNCIADO.md            "LLM para ESCREVER, [regra/modelo tipado] para DECIDIR"
 
 Rodar:
-    python regras.py      # confere as regras nos casos C1, C2, C6 e C12 com pedidos montados à mão (sem LLM)
+    python etapa06_regras.py      # confere as regras nos casos C1, C2, C6 e C12 com pedidos montados à mão (sem LLM)
 """
 from datetime import date, timedelta
 
-from ferramentas import buscar_feriados, data_retorno, dias_uteis, eh_dia_util, inicio_permitido
+from etapa04_ferramentas import buscar_feriados, data_retorno, dias_uteis, eh_dia_util, inicio_permitido
 
 
 def resumo_periodo(inicio: str, fim: str) -> dict:

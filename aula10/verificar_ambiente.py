@@ -110,7 +110,7 @@ try:
     from mcp.client.stdio import stdio_client
 
     async def listar_tools() -> list[str]:
-        params = StdioServerParameters(command=sys.executable, args=[str(PASTA / "mcp_rh.py")])
+        params = StdioServerParameters(command=sys.executable, args=[str(PASTA / "etapa05_mcp_rh.py")])
         with open(os.devnull, "w") as silencio:
             async with stdio_client(params, errlog=silencio) as (leitura, escrita):
                 async with ClientSession(leitura, escrita) as sessao:
@@ -119,9 +119,9 @@ try:
 
     tools = asyncio.run(asyncio.wait_for(listar_tools(), timeout=30))
     if len(tools) == 6:
-        ok(f"mcp_rh.py no ar com {len(tools)} tools: {', '.join(tools)}")
+        ok(f"etapa05_mcp_rh.py no ar com {len(tools)} tools: {', '.join(tools)}")
     else:
-        erro(f"mcp_rh.py listou {len(tools)} tools (esperado 6): {tools}")
+        erro(f"etapa05_mcp_rh.py listou {len(tools)} tools (esperado 6): {tools}")
 except Exception as e:  # noqa: BLE001
     erro(f"o MCP Server não subiu: {type(e).__name__}: {str(e)[:150]}")
 

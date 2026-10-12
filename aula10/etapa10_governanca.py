@@ -20,7 +20,7 @@ REFERÊNCIAS NAS AULAS
   aula8/exemplos/06_excessive_agency/1_codigo_pronto/main.py   o risco que a lista de permissões evita
 
 Por que funciona: o SDK chama on_tool_start ANTES de executar a tool. Uma exceção levantada ali interrompe o
-Runner e a tool NÃO roda. Trate LimiteExcedido em volta do Runner (etapa6_linear.py). Dois detalhes do SDK:
+Runner e a tool NÃO roda. Trate LimiteExcedido em volta do Runner (etapa06_linear.py). Dois detalhes do SDK:
   1. LimiteExcedido herda de AgentsException. Se herdasse de Exception, o SDK a embrulharia num UserError
      ("Error running tool ...") e o seu `except LimiteExcedido` não a pegaria.
   2. Dentro de um especialista chamado via as_tool, o SDK, por padrão, transforma QUALQUER erro em uma mensagem
@@ -35,7 +35,7 @@ class LimiteExcedido(AgentsException):
 
 
 # 🆕 B.1 -- agente -> conjunto de nomes de tools permitidas.
-#   Os especialistas usam as tools de agentes.py; o Coordenador só chama os especialistas (os tool_name das as_tool).
+#   Os especialistas usam as tools de etapa06_agentes.py; o Coordenador só chama os especialistas (os tool_name das as_tool).
 #   O salário (consultar_remuneracao) só pode passar pelo Financeiro.
 PERMISSOES: dict[str, set[str]] = {
     # "Normas": {"consultar_normas"},

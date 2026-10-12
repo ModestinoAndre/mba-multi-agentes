@@ -15,9 +15,9 @@ ESQUELETO: implemente as etapas na ordem (troque cada raise NotImplementedError 
   ETAPA 8.3 -- rotear_chefia: aprovado / rejeitado (máx. 2) / indeferido_pela_chefia
   ETAPA 8.4 -- listar_pendentes() e retomar() com Command(resume=...)
   ETAPA 9.4 -- guardrail de SAÍDA no registrar (despacho sem CPF/CID, N10)
-  (ETAPA 9.2/9.3 ficam no mcp_rh.py; ETAPA 10 em observabilidade.py e governanca.py)
+  (ETAPA 9.2/9.3 ficam no etapa05_mcp_rh.py; ETAPA 10 em etapa10_observabilidade.py e etapa10_governanca.py)
   --- OPCIONAIS (bônus): o grafo funciona sem eles. Faça só se sobrar tempo, depois da Etapa 9.
-  🆕 A     -- ligue USAR_VOTACAO = True (depois de fazer o 🆕 A em extracao.py)
+  🆕 A     -- ligue USAR_VOTACAO = True (depois de fazer o 🆕 A em etapa02_extracao.py)
   🆕 C.1   -- proteger_entrada com DUAS faixas (ok / dúvida / bloqueado)
   🆕 C.2   -- triagem_humana com interrupt() e rotear_triagem; depois ligue USAR_TRIAGEM_HUMANA = True
 
@@ -39,14 +39,14 @@ REFERÊNCIAS NAS AULAS
   aula6/exemplos/04_langgraph_basico/main.py       app.get_graph().draw_mermaid()
 
 Rodar (a partir de aula10/):
-    python grafo.py C2_ferias_com_venda           # um caso (o nome do caso é o thread_id)
-    python grafo.py --todos                       # os 12 casos
-    python grafo.py --pendentes                   # ETAPA 8.4: quem está pausado e onde
-    python grafo.py --retomar C2_ferias_com_venda sim 1010             # a chefia 1010 aprova
-    python grafo.py --retomar C2_ferias_com_venda "nao:mude as datas" 1010
-    python grafo.py --retomar C10_zona_cinzenta "sim:tratar como abono" rh   # 🆕 C (opcional): o atendente do RH decide
-    python grafo.py --sem-guardrail C7_autoaprovacao   # ETAPA 9.5: o server ainda nega?
-    python grafo.py --mermaid                     # o diagrama
+    python etapa07_grafo.py C2_ferias_com_venda           # um caso (o nome do caso é o thread_id)
+    python etapa07_grafo.py --todos                       # os 12 casos
+    python etapa07_grafo.py --pendentes                   # ETAPA 8.4: quem está pausado e onde
+    python etapa07_grafo.py --retomar C2_ferias_com_venda sim 1010             # a chefia 1010 aprova
+    python etapa07_grafo.py --retomar C2_ferias_com_venda "nao:mude as datas" 1010
+    python etapa07_grafo.py --retomar C10_zona_cinzenta "sim:tratar como abono" rh   # 🆕 C (opcional): o atendente do RH decide
+    python etapa07_grafo.py --sem-guardrail C7_autoaprovacao   # ETAPA 9.5: o server ainda nega?
+    python etapa07_grafo.py --mermaid                     # o diagrama
 """
 import operator
 import os
@@ -58,22 +58,22 @@ from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, interrupt
 
-import agentes
-from cliente_mcp import chamar_mcp
+import etapa06_agentes as agentes
+from etapa05_cliente_mcp import chamar_mcp
 from dados.casos import CASOS
 from dados_rh import SAIDAS
-from extracao import extrair, extrair_com_votacao
-from ferramentas import gerar_protocolo, rodar_com_limites_sync
-from guardrails import LIMIAR, MENSAGENS, encontrar_dado_sensivel, nota_escopo
-from observabilidade import medido
+from etapa02_extracao import extrair, extrair_com_votacao
+from etapa04_ferramentas import gerar_protocolo, rodar_com_limites_sync
+from etapa03_guardrails import LIMIAR, MENSAGENS, encontrar_dado_sensivel, nota_escopo
+from etapa10_observabilidade import medido
 from provedor import configurar
-from regras import precisa_chefia, resumo_periodo, violacoes_objetivas
+from etapa06_regras import precisa_chefia, resumo_periodo, violacoes_objetivas
 
 MODELO = configurar()
 
 MAX_TENTATIVAS = 3     # ciclo redigir <-> validar
 MAX_REJEICOES = 2      # ciclo chefia -> redigir
-USAR_VOTACAO = False          # 🆕 A (opcional): True usa os 3 extratores com votação (extracao.py)
+USAR_VOTACAO = False          # 🆕 A (opcional): True usa os 3 extratores com votação (etapa02_extracao.py)
 USAR_TRIAGEM_HUMANA = False   # 🆕 C (opcional): True liga as duas faixas e o nó triagem_humana
 LIMIAR_OK = 0.4        # 🆕 C: abaixo disto, segue direto
 LIMIAR_BLOQUEIO = 0.8  # 🆕 C: a partir disto, bloqueia; entre os dois, um humano decide
@@ -215,7 +215,7 @@ def no_financeiro(estado: Estado) -> dict:
 
 
 def consolidar(estado: Estado) -> dict:
-    # ETAPA 7.3 -- o fan-in: espera os três ramos. Calcule violacoes_objetivas(...) (regras.py) e a decisão:
+    # ETAPA 7.3 -- o fan-in: espera os três ramos. Calcule violacoes_objetivas(...) (etapa06_regras.py) e a decisão:
     #   {"violacoes": [...], "decisao": "indeferido" se houver violação, senão "deferido", "caminho": ["consolidar"]}
     #   Experimento (Etapa 7.1): faça no_escala também devolver {"violacoes": ["teste"]}. Sem o reducer em
     #   `violacoes`, o que acontece? E com ele? (aula7/exemplos/08_paralelismo/exercicio.md, item 4)
@@ -316,7 +316,7 @@ def mostrar(app, thread_id: str, saida: dict) -> None:
     if "__interrupt__" in saida:
         pausa = saida["__interrupt__"][0].value
         print(f"[{thread_id}] PAUSADO em {app.get_state(config_de(thread_id)).next}: {pausa.get('pergunta')}")
-        print(f"   retome com: python grafo.py --retomar {thread_id} sim|\"nao:motivo\" <quem>")
+        print(f"   retome com: python etapa07_grafo.py --retomar {thread_id} sim|\"nao:motivo\" <quem>")
     else:
         print(f"[{thread_id}] resultado: {saida.get('resultado')}  protocolo: {saida.get('protocolo')}")
         print(f"[{thread_id}] despacho: {saida.get('despacho')}")

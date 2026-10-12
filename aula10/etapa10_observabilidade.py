@@ -4,7 +4,7 @@ ETAPA 10 -- Observabilidade (15 min): onde o tempo foi gasto e quanto custou, po
 ESQUELETO:
   ETAPA 10.2 -- medido(): embrulha um nó, mede o tempo e grava uma linha em saidas/metricas.jsonl
   ETAPA 10.3 -- resumo(): nós percorridos, tempo total, nó mais lento e tokens totais de uma execução
-  (ETAPA 10.1 fica em governanca.py: o hook do 🆕 B ganha um segundo papel, registrar)
+  (ETAPA 10.1 fica em etapa10_governanca.py: o hook do 🆕 B ganha um segundo papel, registrar)
 
 Até você fazer a 10.2, medido() devolve o nó sem mudar nada: o grafo funciona igual.
 
@@ -14,7 +14,7 @@ REFERÊNCIAS NAS AULAS
   aula8/exemplos/03_observabilidade/1_codigo_pronto/passo1_trace.py   trace e spans (o Langfuse do passo 2 é opcional)
 
 Rodar:
-    python observabilidade.py <thread_id>     # imprime o resumo de uma execução já feita
+    python etapa10_observabilidade.py <thread_id>     # imprime o resumo de uma execução já feita
 """
 import functools
 import json

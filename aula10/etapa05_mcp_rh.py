@@ -19,7 +19,7 @@ REFERÊNCIAS NAS AULAS
   aula5/exemplos/10_seguranca/server_seguro.py token, enum fechado e auditoria NO SERVER        <- o mais parecido (9.2/9.3)
 
 Testar sem agente (MCP Inspector, precisa de Node.js):
-    npx @modelcontextprotocol/inspector python mcp_rh.py
+    npx @modelcontextprotocol/inspector python etapa05_mcp_rh.py
 
 Pronto quando: o Inspector lista as 6 tools; registrar C1 duas vezes gera um único registro.
 """

@@ -13,7 +13,7 @@ REFERÊNCIAS NAS AULAS
   aula8/exemplos/02_agente_tool/main.py              o agente decide quando chamar a tool (e quando não)
 
 Rodar (a partir de aula10/):
-    python etapa1_agente.py
+    python etapa01_agente.py
 
 Pronto quando: a tool é chamada só na primeira pergunta (o print dentro dela prova).
 """

@@ -12,8 +12,8 @@ REFERÊNCIAS NAS AULAS
   aula5/exemplos/02_mcp_basico/cliente.py     cliente MCP "cru" (initialize, call_tool)
 
 Rodar:
-    python cliente_mcp.py            # 5.4: chama as tools direto e registra o C1 duas vezes (idempotência)
-    python cliente_mcp.py --agente   # 5.3: o AtendenteRH responde usando o server
+    python etapa05_cliente_mcp.py            # 5.4: chama as tools direto e registra o C1 duas vezes (idempotência)
+    python etapa05_cliente_mcp.py --agente   # 5.3: o AtendenteRH responde usando o server
 
 Pronto quando: o agente responde "A equipe Cartório tem alguém de férias entre 12 e 26/07/2027?" usando o server, e
 registrar o C1 duas vezes gera um único registro.
@@ -32,13 +32,13 @@ from mcp.client.stdio import stdio_client
 from dados_rh import PASTA
 
 load_dotenv(PASTA / ".env")
-SERVER = str(PASTA / "mcp_rh.py")
+SERVER = str(PASTA / "etapa05_mcp_rh.py")
 
 
 async def chamar_mcp_async(tool: str, argumentos: dict) -> dict:
     # ETAPA 5.4 -- suba o server por stdio, abra a sessão, initialize(), call_tool(tool, argumentos).
     #   Se resposta.is_error: levante RuntimeError com o conteúdo.
-    #   Toda tool do mcp_rh.py devolve UM dict: devolva json.loads(resposta.content[0].text).
+    #   Toda tool do etapa05_mcp_rh.py devolve UM dict: devolva json.loads(resposta.content[0].text).
     #   Dica: StdioServerParameters(command=sys.executable, args=[SERVER]) e, para não poluir a tela,
     #   stdio_client(params, errlog=open(os.devnull, "w")).
     #   Referência: aula6/desafio2/main.py (chamar_mcp)

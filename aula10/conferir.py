@@ -148,8 +148,8 @@ class GrafoComLLMFixo:
     """Monta o grafo do aluno trocando só o LLM por respostas fixas e interceptando a gravação no MCP."""
 
     def __init__(self, triagem: bool = False):
-        import agentes
-        import grafo
+        import etapa06_agentes as agentes
+        import etapa07_grafo as grafo
         from langgraph.checkpoint.memory import MemorySaver
 
         self.grafo, self.gravacoes, self.caso_atual = grafo, [], "?"
@@ -262,7 +262,7 @@ def etapa0(e: Etapa):
     e.conferir("tabela N1–N10 preenchida no ENTREGA.md", tabela)
 
 
-@etapa("1", "Primeiro agente com tool", "etapa1_agente.py; aula1/segundo_agente.py")
+@etapa("1", "Primeiro agente com tool", "etapa01_agente.py; aula1/segundo_agente.py")
 def etapa1(e: Etapa):
     async def chamar(tool, argumentos: dict) -> str:
         from agents.tool_context import ToolContext
@@ -271,7 +271,7 @@ def etapa1(e: Etapa):
         return str(await tool.on_invoke_tool(ctx, texto))
 
     def tool_1_1():
-        import etapa1_agente as m
+        import etapa01_agente as m
         saida = asyncio.run(chamar(m.consultar_servidor, {"matricula": "1002"}))
         if "NotImplementedError" in saida or "ETAPA 1.1" in saida:
             raise NotImplementedError("ETAPA 1.1")
@@ -282,13 +282,13 @@ def etapa1(e: Etapa):
         assert "não encontrada" in saida.lower() or "nao encontrada" in saida.lower(), f"para 9999 veio: {saida[:120]}"
 
     def agente_1_2():
-        import etapa1_agente as m
+        import etapa01_agente as m
         agente = m.criar_atendente()
         assert "consultar_servidor" in [t.name for t in agente.tools], "o AtendenteRH não tem a tool consultar_servidor"
 
     def llm_1_3():
         from agents import Runner
-        import etapa1_agente as m
+        import etapa01_agente as m
         resposta = Runner.run_sync(m.criar_atendente(), "Quantos dias de férias a matrícula 1002 ainda tem?").final_output
         assert "30" in resposta, f"a resposta não fala em 30 dias: {resposta[:120]}"
 
@@ -298,10 +298,10 @@ def etapa1(e: Etapa):
         e.conferir("1.3 [LLM] o agente responde o saldo da 1002", llm_1_3)
 
 
-@etapa("2", "Extração estruturada", "extracao.py; aula2/agente_output2.py")
+@etapa("2", "Extração estruturada", "etapa02_extracao.py; aula2/agente_output2.py")
 def etapa2(e: Etapa):
     def modelo_2_1():
-        from extracao import Pedido
+        from etapa02_extracao import Pedido
         faltam = {"matricula", "data_inicio", "data_fim", "dias_vendidos", "destino", "tipo_destino", "justificativa"} - set(Pedido.model_fields)
         if len(faltam) == 7:
             raise NotImplementedError("ETAPA 2.1")
@@ -310,13 +310,13 @@ def etapa2(e: Etapa):
         assert not sem, f"campos sem Field(description=...): {sem}"
 
     def extrator_2_2():
-        import extracao
+        import etapa02_extracao as extracao
         agente = extracao.criar_extrator(extracao.INSTRUCOES_EXTRATOR)
         igual(agente.output_type, extracao.Pedido, "output_type do extrator")
         assert "TODO" not in extracao.INSTRUCOES_EXTRATOR, "INSTRUCOES_EXTRATOR ainda tem o TODO"
 
     def llm_2_3():
-        import extracao
+        import etapa02_extracao as extracao
         erros = []
         for nome, chaves in [("C1_abono_simples", ("tipo", "matricula", "data_inicio", "data_fim")),
                              ("C2_ferias_com_venda", ("tipo", "matricula", "data_inicio", "data_fim", "dias_vendidos")),
@@ -335,10 +335,10 @@ def etapa2(e: Etapa):
         e.conferir("2.3 [LLM] extração de C1, C2, C5 e C11", llm_2_3)
 
 
-@etapa("3", "Guardrails de entrada", "guardrails.py; aula2/agente_guardrail.py")
+@etapa("3", "Guardrails de entrada", "etapa03_guardrails.py; aula2/agente_guardrail.py")
 def etapa3(e: Etapa):
     def regex_3_1():
-        from guardrails import encontrar_dado_sensivel as f
+        from etapa03_guardrails import encontrar_dado_sensivel as f
         igual(f("Meu CPF é 123.456.789-09"), "cpf", "CPF com pontos")
         igual(f("cpf 12345678909"), "cpf", "CPF sem pontos")
         igual(f("Estou com CID F32.1"), "cid", "CID com ponto")
@@ -349,12 +349,12 @@ def etapa3(e: Etapa):
             igual(f(caso["pedido"]), esperado, f"{nome}")
 
     def classificador_3_2():
-        import guardrails
+        import etapa03_guardrails as guardrails
         igual(guardrails.criar_classificador().output_type, guardrails.AvaliacaoEscopo, "output_type do classificador")
 
     def guardrails_3_4():
         from agents import InputGuardrail
-        import guardrails
+        import etapa03_guardrails as guardrails
         for nome in ("barrar_dado_sensivel", "barrar_fora_do_escopo"):
             assert isinstance(getattr(guardrails, nome), InputGuardrail), f"{nome} precisa do @input_guardrail"
         rodar = guardrails.barrar_dado_sensivel.guardrail_function
@@ -366,7 +366,7 @@ def etapa3(e: Etapa):
             "o output_info do bloqueio do C3 deveria dizer o motivo (cpf)"
 
     def llm_3_3():
-        import guardrails
+        import etapa03_guardrails as guardrails
         n1, _ = guardrails.nota_escopo(CASOS["C1_abono_simples"]["pedido"])
         n4, _ = guardrails.nota_escopo(CASOS["C4_fora_do_escopo"]["pedido"])
         n7, _ = guardrails.nota_escopo(CASOS["C7_autoaprovacao"]["pedido"])
@@ -382,21 +382,21 @@ def etapa3(e: Etapa):
         e.conferir("3.3 [LLM] notas do classificador: C1 passa, C4 e C7 bloqueiam", llm_3_3)
 
 
-@etapa("4", "APIs com resiliência (pronta)", "ferramentas.py")
+@etapa("4", "APIs com resiliência (pronta)", "etapa04_ferramentas.py")
 def etapa4(e: Etapa):
     def pronta():
-        import ferramentas as f
+        import etapa04_ferramentas as f
         igual(f.inicio_permitido("2027-04-12"), True, "inicio_permitido(2027-04-12)")
         igual(f.inicio_permitido("2027-04-30"), False, "inicio_permitido(2027-04-30)")
         igual(f.dias_uteis("2027-04-12", "2027-04-26"), 10, "dias úteis 12 a 26/04/2027")
         igual(f.gerar_protocolo("1001", "abono", "2027-04-09", "2027-04-09"), "ae788d33", "protocolo do C1")
 
-    e.conferir("ferramentas.py responde como esperado (é a peça pronta: não mexa nela)", pronta)
+    e.conferir("etapa04_ferramentas.py responde como esperado (é a peça pronta: não mexa nela)", pronta)
 
 
-@etapa("5", "MCP Server do RH", "mcp_rh.py e cliente_mcp.py; aula6/desafio2/mcp_unidades.py")
+@etapa("5", "MCP Server do RH", "etapa05_mcp_rh.py e etapa05_cliente_mcp.py; aula6/desafio2/mcp_unidades.py")
 def etapa5(e: Etapa):
-    from cliente_mcp import chamar_mcp
+    from etapa05_cliente_mcp import chamar_mcp
 
     def cliente_5_4():
         servidor = chamar_mcp("consultar_servidor", {"matricula": "1002"})
@@ -433,13 +433,13 @@ def etapa5(e: Etapa):
     e.conferir("5.2 registrar_decisao grava e não duplica", escrita_5_2)
 
 
-@etapa("6", "Especialistas e fluxo linear (Marco mínimo)", "agentes.py e etapa6_linear.py; aula4/ex03_agente_as_tool.py")
+@etapa("6", "Especialistas e fluxo linear (Marco mínimo)", "etapa06_agentes.py e etapa06_linear.py; aula4/ex03_agente_as_tool.py")
 def etapa6(e: Etapa):
     def nomes(agente) -> set[str]:
         return {t.name for t in agente.tools}
 
     def especialistas_6_1():
-        import agentes
+        import etapa06_agentes as agentes
         igual(nomes(agentes.criar_normas()), {"consultar_normas"}, "tools do Normas")
         igual(nomes(agentes.criar_escala()), {"consultar_escala"}, "tools do Escala")
         fin = nomes(agentes.criar_financeiro())
@@ -447,25 +447,25 @@ def etapa6(e: Etapa):
         igual(nomes(agentes.criar_redator()), set(), "tools do Redator (nenhuma)")
 
     def coordenador_6_2():
-        import agentes
+        import etapa06_agentes as agentes
         tools = nomes(agentes.criar_coordenador())
         assert {"parecer_normas", "parecer_escala", "parecer_financeiro"} <= tools, f"o Coordenador deve ter os 3 especialistas como tools: {tools}"
         proibidas = tools & {"consultar_remuneracao", "registrar_decisao", "consultar_normas", "consultar_escala"}
         assert not proibidas, f"o Coordenador não deve ter estas tools direto: {proibidas}"
 
     def regras_6_0():
-        from regras import precisa_chefia, violacoes_objetivas
+        from etapa06_regras import precisa_chefia, violacoes_objetivas
         servidor = {"matricula": "1004", "saldo_ferias_dias": 30, "abonos_restantes": 5}
         escala = {"limite_afastados": 1, "afastamentos": [{"matricula": "1006", "inicio": "2027-07-05", "fim": "2027-07-19"}]}
-        from regras import resumo_periodo
+        from etapa06_regras import resumo_periodo
         v = violacoes_objetivas({"tipo": "ferias", "data_inicio": "2027-07-12", "data_fim": "2027-07-26", "dias_vendidos": 0},
                                 servidor, resumo_periodo("2027-07-12", "2027-07-26"), escala)
         igual([x.split(":")[0] for x in v], ["N5"], "violações do C6")
         igual(precisa_chefia({"tipo": "ferias"}, []), True, "férias sem violação precisam de chefia")
 
     def llm_6_4():
-        import etapa6_linear
-        gravacoes, real = [], etapa6_linear.chamar_mcp
+        import etapa06_linear as etapa06_linear
+        gravacoes, real = [], etapa06_linear.chamar_mcp
 
         def interceptar(tool, argumentos):
             if tool == "registrar_decisao":
@@ -473,19 +473,19 @@ def etapa6(e: Etapa):
                 return {"sucesso": True, "protocolo": argumentos.get("protocolo")}
             return real(tool, argumentos)
 
-        etapa6_linear.chamar_mcp = interceptar
-        r = etapa6_linear.processar(CASOS["C6_conflito_de_escala"]["pedido"])
+        etapa06_linear.chamar_mcp = interceptar
+        r = etapa06_linear.processar(CASOS["C6_conflito_de_escala"]["pedido"])
         assert gravacoes, f"o C6 não chegou a registrar: {r.get('resultado')}"
         igual((gravacoes[-1].get("protocolo"), gravacoes[-1].get("decisao")), ("6f1b47d7", "indeferido"), "registro do C6")
 
-    e.conferir("6.0 regras.py (pronta)", regras_6_0)
+    e.conferir("6.0 etapa06_regras.py (pronta)", regras_6_0)
     e.conferir("6.1 cada especialista só com as suas tools", especialistas_6_1)
     e.conferir("6.2 Coordenador com os especialistas como as_tool", coordenador_6_2)
     if COM_LLM:
         e.conferir("6.4 [LLM] processar(C6) chega ao indeferimento com o protocolo certo", llm_6_4)
 
 
-@etapa("7", "O grafo", "grafo.py; aula6/desafio2/main.py e aula7/exemplos/08_paralelismo/main.py")
+@etapa("7", "O grafo", "etapa07_grafo.py; aula6/desafio2/main.py e aula7/exemplos/08_paralelismo/main.py")
 def etapa7(e: Etapa):
     teste = {}
 
@@ -517,7 +517,7 @@ def etapa7(e: Etapa):
     e.conferir("C12 início proibido -> registra indeferido (N3)", caso("C12_inicio_proibido", COMPLETO + ["registrar"], "7c458e62", "indeferido"))
 
 
-@etapa("8", "Persistência e aprovação da chefia", "grafo.py; aula7/exemplos/07_aprovacao_revisao/main.py")
+@etapa("8", "Persistência e aprovação da chefia", "etapa07_grafo.py; aula7/exemplos/07_aprovacao_revisao/main.py")
 def etapa8(e: Etapa):
     teste = {}
 
@@ -569,9 +569,9 @@ def etapa8(e: Etapa):
     e.conferir("8.3 duas rejeições -> indeferido_pela_chefia", duas_rejeicoes)
 
 
-@etapa("9", "Segurança (Marco completo)", "mcp_rh.py e grafo.py; aula5/exemplos/10_seguranca/server_seguro.py")
+@etapa("9", "Segurança (Marco completo)", "etapa05_mcp_rh.py e etapa07_grafo.py; aula5/exemplos/10_seguranca/server_seguro.py")
 def etapa9(e: Etapa):
-    from cliente_mcp import chamar_mcp
+    from etapa05_cliente_mcp import chamar_mcp
     token = os.getenv("TOKEN_REGISTRO", "")
     base = {"protocolo": "conferir-9", "matricula": "1002", "tipo": "ferias", "inicio": "2027-04-12", "fim": "2027-04-26",
             "decisao": "deferido", "aprovador": "1010", "despacho": "teste do conferir.py", "token": token, "thread_id": "conferir-9"}
@@ -622,10 +622,10 @@ def etapa9(e: Etapa):
     e.conferir("9.4 guardrail de saída: despacho com CPF não é gravado", saida_9_4)
 
 
-@etapa("10", "Observabilidade", "governanca.py e observabilidade.py; aula5/exemplos/11_observabilidade/")
+@etapa("10", "Observabilidade", "etapa10_governanca.py e etapa10_observabilidade.py; aula5/exemplos/11_observabilidade/")
 def etapa10(e: Etapa):
     def hook_10_1():
-        from governanca import Governanca
+        from etapa10_governanca import Governanca
         g = Governanca(verbose=False)
         agente = SimpleNamespace(name="Financeiro")
         ctx = SimpleNamespace(tool_arguments='{"tipo_destino": "exterior"}', usage=SimpleNamespace(total_tokens=321))
@@ -637,7 +637,7 @@ def etapa10(e: Etapa):
         assert "tabela_diarias" in texto and "321" in texto, f"os eventos deveriam ter a tool e os tokens: {texto[:200]}"
 
     def medido_10_2():
-        import observabilidade as o
+        import etapa10_observabilidade as o
         def no_teste(estado):
             return {"caminho": ["teste"]}
         embrulhado = o.medido("no_teste", no_teste)
@@ -670,10 +670,10 @@ def etapa11(e: Etapa):
 
 
 # ===================================================================== opcionais
-@etapa("🆕A", "Votação em paralelo (opcional)", "extracao.py")
+@etapa("🆕A", "Votação em paralelo (opcional)", "etapa02_extracao.py")
 def opcional_a(e: Etapa):
     def votar():
-        from extracao import Pedido, votar as votar_aluno
+        from etapa02_extracao import Pedido, votar as votar_aluno
         base = dict(tipo="ferias", matricula="1002", data_inicio="2027-04-12", data_fim="2027-04-26", dias_vendidos=10,
                     destino=None, tipo_destino=None, justificativa="x")
         p = lambda **mudar: Pedido(**{**base, **mudar})  # noqa: E731
@@ -685,10 +685,10 @@ def opcional_a(e: Etapa):
     e.conferir("🆕 A.3 votar(): maioria e divergência", votar)
 
 
-@etapa("🆕B", "Hooks que barram (opcional)", "governanca.py")
+@etapa("🆕B", "Hooks que barram (opcional)", "etapa10_governanca.py")
 def opcional_b(e: Etapa):
     def barra():
-        from governanca import Governanca, LimiteExcedido, PERMISSOES
+        from etapa10_governanca import Governanca, LimiteExcedido, PERMISSOES
         if not PERMISSOES:
             raise NotImplementedError("🆕 B.1")
         g = Governanca(verbose=False)
@@ -708,7 +708,7 @@ def opcional_b(e: Etapa):
     e.conferir("🆕 B barra tool fora da lista e orçamento estourado", barra)
 
 
-@etapa("🆕C", "Humano na entrada (opcional)", "grafo.py")
+@etapa("🆕C", "Humano na entrada (opcional)", "etapa07_grafo.py")
 def opcional_c(e: Etapa):
     def triagem():
         g = GrafoComLLMFixo(triagem=True)

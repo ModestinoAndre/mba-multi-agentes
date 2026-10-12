@@ -41,7 +41,7 @@ Compare **caminho e estado**, não o texto do despacho.
 ## O grafo
 
 ```mermaid
-%% cole aqui a saída de: python grafo.py --mermaid
+%% cole aqui a saída de: python etapa07_grafo.py --mermaid
 ```
 
 ## Etapa 4 (pronta): o que eu entendi
@@ -59,7 +59,7 @@ Compare **caminho e estado**, não o texto do despacho.
 ## Opcionais (preencha só os que fez)
 
 - 🆕 A: votos e decisão do C9: ___ ; tempo dos 3 extratores em paralelo ___ s, em sequência ___ s
-- 🆕 B: saída do `python etapa6_linear.py --governanca`:
+- 🆕 B: saída do `python etapa06_linear.py --governanca`:
 - 🆕 C: caminho do C10 com a triagem humana (sim e não):
 
 ## Reflexão (até 3 linhas cada)

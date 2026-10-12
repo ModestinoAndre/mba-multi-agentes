@@ -6,7 +6,7 @@ ESQUELETO:
   ETAPA 6.2 -- criar_coordenador(): usa Normas, Escala e Financeiro como TOOLS (as_tool)
 
 As tools abaixo (PRONTAS) só repassam a chamada ao MCP Server do RH (cliente_mcp.chamar_mcp_async). Dar a cada agente
-só as tools dele é o PRIVILÉGIO MÍNIMO (Etapa 9.1); o hook do 🆕 B (governanca.py) confere isso em tempo de execução.
+só as tools dele é o PRIVILÉGIO MÍNIMO (Etapa 9.1); o hook do 🆕 B (etapa10_governanca.py) confere isso em tempo de execução.
 
 REFERÊNCIAS NAS AULAS
   aula4/ex03_agente_as_tool.py                         Coordenador que chama especialistas como tools    <- o mais parecido
@@ -20,8 +20,8 @@ import json
 
 from agents import Agent, ModelSettings, RunHooks, function_tool
 
-from cliente_mcp import chamar_mcp_async
-from ferramentas import cotacao_usd_brl
+from etapa05_cliente_mcp import chamar_mcp_async
+from etapa04_ferramentas import cotacao_usd_brl
 
 CONFIG = ModelSettings(temperature=0)
 
@@ -64,7 +64,7 @@ def cotacao_dolar() -> str:
 def criar_normas() -> Agent:
     # ETAPA 6.1 -- Agent(name="Normas", instructions=..., tools=[consultar_normas], model_settings=CONFIG)
     #   Responsabilidade: dizer QUAIS regras se aplicam ao pedido e explicá-las em linguagem simples.
-    #   NÃO calcula valores, NÃO consulta a escala. Recebe também as violações objetivas (regras.py) para explicá-las.
+    #   NÃO calcula valores, NÃO consulta a escala. Recebe também as violações objetivas (etapa06_regras.py) para explicá-las.
     raise NotImplementedError("ETAPA 6.1: criar_normas")
 
 
