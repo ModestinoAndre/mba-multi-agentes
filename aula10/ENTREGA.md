@@ -78,3 +78,17 @@ Compare **caminho e estado**, não o texto do despacho.
 | Arquivo / trecho | Exemplo das aulas em que me baseei | O que precisei adaptar |
 |---|---|---|
 | | | |
+
+
+| Regra | Tema | Quem verifica (função Python / agente / humano) | Por quê | Onde foi implementada (preencha na Etapa 11) |
+|---|---|---|---|---|
+| N1 | férias | função Python | conta: dias corridos >= 5 e <= saldo | |
+| N2 | férias | função Python | conta: dias + vendidos <= saldo, vendidos <= 10 | |
+| N3 | férias | função Python | consulta de calendário (feriados e fim de semana) | |
+| N4 | prazos | função Python | diferença entre datas (dias corridos ou úteis) | |
+| N5 | escala | função Python | contagem de afastados da equipe no período x limite de 30% | |
+| N6 | abono | função Python | dia útil e saldo de abonos | |
+| N7 | diária | função Python | conta (diárias + meia diária, câmbio); o agente Financeiro só explica | |
+| N8 | aprovação | humano | é decisão da chefia; o server só confere se o aprovador é a chefia certa | |
+| N9 | saúde | função Python (guardrail) | regex de CID/CPF barra antes de qualquer agente ver o texto; o classificador (agente) cobre o que a regex não pega | |
+| N10 | dados | função Python (guardrail de saída) | regex no despacho antes de gravar | |
