@@ -1,14 +1,17 @@
 """
-🆕 B -- Hooks para CONTROLAR, não só para observar (Etapa 6, 10 min). Volta aqui na ETAPA 10.1 (observabilidade).
+🆕 B (OPCIONAL, bônus) -- Hooks para CONTROLAR, não só para observar. E ETAPA 10.1 (obrigatória): o hook que registra.
+
+Sem tempo? Pule os itens 🆕 B: a classe Governanca já funciona como hook "só observador" (conta as chamadas) e a
+Etapa 10.1 usa este mesmo arquivo.
 
 Conceito que você já conhece: em aula3/agente_hook2.py e aula3/agente_loop.py os RunHooks só IMPRIMIAM
 ("turno 2", "chamou a ferramenta X"). Contexto novo: o mesmo gancho roda ANTES de cada tool (on_tool_start) e
 ANTES de cada chamada ao modelo (on_llm_start) -- então ele pode BARRAR a execução. Não há exemplo pronto disto.
 
 ESQUELETO:
-  🆕 B.1 -- PERMISSOES: quais tools cada agente pode chamar
-  🆕 B.2 -- on_tool_start: tool fora da lista do agente OU orçamento de tools estourado -> LimiteExcedido
-  🆕 B.3 -- on_llm_start: orçamento de chamadas ao modelo estourado -> LimiteExcedido
+  🆕 B.1 (opcional) -- PERMISSOES: quais tools cada agente pode chamar
+  🆕 B.2 (opcional) -- on_tool_start: tool fora da lista do agente OU orçamento de tools estourado -> LimiteExcedido
+  🆕 B.3 (opcional) -- on_llm_start: orçamento de chamadas ao modelo estourado -> LimiteExcedido
   ETAPA 10.1 -- on_tool_end / on_agent_end: registre tool, argumentos, resultado e tokens (o MESMO hook, outro papel)
 
 REFERÊNCIAS NAS AULAS
@@ -48,16 +51,16 @@ class Governanca(RunHooks):
         self.eventos: list[dict] = []  # ETAPA 10.1: o que aconteceu, para gravar em saidas/metricas.jsonl
 
     async def on_tool_start(self, context, agent, tool) -> None:
-        # 🆕 B.2 -- conte a chamada; levante LimiteExcedido se:
+        self.tools_chamadas += 1
+        # 🆕 B.2 (opcional) -- levante LimiteExcedido se:
         #   - tool.name não está em PERMISSOES.get(agent.name, set())   -> "Coordenador não pode usar consultar_remuneracao"
         #   - self.tools_chamadas > self.max_tools                       -> "orçamento de tools estourado (N de M)"
         #   Imprima a decisão quando self.verbose (ex.: "[governança] Financeiro -> tabela_diarias: OK").
-        raise NotImplementedError("🆕 B.2: on_tool_start")
 
     async def on_llm_start(self, context, agent, system_prompt, input_items) -> None:
-        # 🆕 B.3 -- conte a chamada ao modelo; acima de self.max_llm, levante LimiteExcedido.
+        self.chamadas_llm += 1
+        # 🆕 B.3 (opcional) -- acima de self.max_llm, levante LimiteExcedido.
         #   (Parece o max_turns da Etapa 4.7, mas a mensagem e o registro são SEUS, e vale para a equipe toda.)
-        raise NotImplementedError("🆕 B.3: on_llm_start")
 
     async def on_tool_end(self, context, agent, tool, result) -> None:
         # ETAPA 10.1 -- acrescente a self.eventos: {"agente", "tool", "argumentos", "resultado" (truncado)}.

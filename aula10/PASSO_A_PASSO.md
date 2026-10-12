@@ -126,44 +126,6 @@ C11_diaria_exterior
 **Confira:** o C5 **não** pode ter datas inventadas ("agosto de 2027" não é uma data exata). Se o modelo inventar, reforce na
 `description` dos campos de data: "null se o servidor não disse o dia exato".
 
-### 🆕 A: votação em paralelo (10 min)
-
-| Lacuna | O que fazer | Onde olhar |
-|---|---|---|
-| A.1 | 3 instruções diferentes em `INSTRUCOES_VOTANTES` | (contexto novo, sem exemplo) |
-| A.2 | `extrair_com_votacao()`: `await asyncio.gather(*(Runner.run(e, texto) for e in extratores))` | `aula7/exemplos/08_paralelismo/main.py` (o conceito: fan-out/fan-in); `aula3/agente_parada3.py` (`Runner.run` com `asyncio`) |
-| A.3 | `votar()`: maioria com `Counter(...).most_common(1)`; sem maioria em tipo/datas → `divergencia=True` | (contexto novo) |
-| A.4 | Medir o tempo dos 3 em sequência para o C2 | `aula7/exemplos/08_paralelismo/main.py` (medição de tempo) |
-
-```powershell
-python extracao.py --votacao
-```
-
-**Saída esperada** 🔸
-
-```
-C1_abono_simples  (1.9s, divergencia=False)
-  voto 1: tipo=abono 2027-04-09..2027-04-09 vende=0
-  voto 2: tipo=abono 2027-04-09..2027-04-09 vende=0
-  voto 3: tipo=abono 2027-04-09..2027-04-09 vende=0
-  decisão: {'tipo': <TipoPedido.ABONO: 'abono'>, 'matricula': '1001', ...}
-
-C2_ferias_com_venda  (2.3s, divergencia=False)
-  voto 1: tipo=ferias 2027-04-12..2027-04-26 vende=10
-  ... (os 3 iguais)
-
-C9_divergencia  (2.4s, divergencia=True)
-  voto 1: tipo=ferias 2027-03-22..2027-03-31 vende=0
-  voto 2: tipo=ferias 2027-03-25..2027-04-03 vende=5
-  voto 3: tipo=ferias None..None vende=0
-  decisão: {...}
-paralelo: 2.3s | sequencial: 6.8s
-```
-
-**Confira:** C1 e C2 **unânimes**; o C9 é um pedido vago de propósito ("uns dez dias perto da Páscoa"): o normal é os votos
-discordarem nas datas e sair `divergencia=True`. O tempo em paralelo deve ficar perto do de **uma** chamada, e o sequencial,
-perto de **três**.
-
 ---
 
 ## Etapa 3: guardrails de entrada (`guardrails.py`, 20 min)
@@ -207,7 +169,7 @@ C2_ferias_com_venda  nota=0.05  PASSOU (tipo=ferias)
 C3_dado_de_saude     BLOQUEADO (cid/cpf): Por segurança, não envie CPF por este canal. ...
 C4_fora_do_escopo    nota=0.95  BLOQUEADO (fora_do_escopo): Este canal atende apenas pedidos de férias, abono e diária.
 C7_autoaprovacao     nota=0.90  BLOQUEADO (fora_do_escopo): Este canal atende apenas pedidos de férias, abono e diária.
-C10_zona_cinzenta    nota=0.50  PASSOU (tipo=outro)      <- anote esta nota: ela é usada no 🆕 C
+C10_zona_cinzenta    nota=0.50  PASSOU (tipo=outro)      <- anote esta nota: ela é usada no opcional 🆕 C
 ```
 
 **Confira:** se o C7 passar, inclua nas instruções do classificador exemplos de "tentar mudar as regras" ("ignore as regras",
@@ -215,19 +177,23 @@ C10_zona_cinzenta    nota=0.50  PASSOU (tipo=outro)      <- anote esta nota: ela
 
 ---
 
-## Etapa 4: APIs externas com resiliência (`ferramentas.py`, 20 min)
+## Etapa 4: APIs externas com resiliência (`ferramentas.py`, 10 min, **pronto**)
 
-Tudo aqui é Python puro: dá para testar **sem chave de API**.
+O `ferramentas.py` **já vem implementado**. Não há lacuna: **leia, rode e explique**. Tudo aqui é Python puro, então dá para testar
+**sem chave de API**. Para cada função, abra o exemplo de origem e compare:
 
-| Lacuna | O que fazer | Onde olhar |
+| Função | O que faz | Exemplo de origem nas aulas |
 |---|---|---|
-| 4.1 | `texto_hoje()` e acrescentar a data às instruções de `extracao.py` | `aula3/agente_retry.py` |
-| 4.2 | `get_json_com_retry()`: `User-Agent`, `timeout`, 3 tentativas, espera `0.5 * 2**(n-1)` | `aula3/agente_retry2.py` (**o mais parecido**) |
-| 4.3 | `buscar_feriados()` com plano B e cache | `aula6/exemplos/11_grafo_real/main.py` (`buscar_feriados`, **a mesma API**) |
-| 4.4 | `dias_uteis()`, `data_retorno()`, `inicio_permitido()` (N3: o dia e os 2 seguintes são úteis) | (lógica de datas; use `eh_dia_util`, já pronto) |
-| 4.5 | `cotacao_usd_brl()` | `aula3/agente_retry4.py` (`consultar_cotacao`, **a mesma API**) |
-| 4.6 | `gerar_protocolo()`: `strip().lower()`, `None` → `""`, junte com `"|"`, `sha256(...).hexdigest()[:8]` | `aula3/agente_retry3.py` (`_chave_idempotencia`) |
-| 4.7 | `rodar_com_limites()`: `asyncio.wait_for` + `max_turns` | `aula3/agente_parada3.py` (`rodar_com_timeout`) |
+| `texto_hoje()` | a data real (já injetada nas instruções do extrator, em `extracao.py`) | `aula3/agente_retry.py` |
+| `get_json_com_retry()` | `User-Agent`, `timeout`, 3 tentativas, espera `0.5 * 2**(n-1)` | `aula3/agente_retry2.py` |
+| `buscar_feriados()` | BrasilAPI com plano B (arquivo local) e cache | `aula6/exemplos/11_grafo_real/main.py` (**a mesma API**) |
+| `dias_uteis()`, `data_retorno()`, `inicio_permitido()` | as contas de datas; N3: o dia de início e os 2 seguintes são úteis | (lógica de datas) |
+| `cotacao_usd_brl()` | câmbio com o mesmo retry; falhou → `None` ("a calcular") | `aula3/agente_retry4.py` (**a mesma API**) |
+| `gerar_protocolo()` | `strip().lower()`, `None` → `""`, junta com `"|"`, `sha256(...).hexdigest()[:8]` | `aula3/agente_retry3.py` |
+| `rodar_com_limites()` | `asyncio.wait_for` (tempo) + `max_turns` (loop), um erro para cada | `aula3/agente_parada3.py` |
+
+Rode nos dois modos e responda no `ENTREGA.md`: por que a espera **dobra** a cada tentativa? Por que o protocolo é um **hash** dos
+campos e não um número sequencial? O que aconteceria se `buscar_feriados` não tivesse **cache**?
 
 ```powershell
 $env:FERIADOS_OFFLINE = "1"
@@ -258,15 +224,16 @@ protocolo C1=ae788d33 C8=ae788d33 iguais=True
 verdade (ex.: `cotação USD->BRL: 5.43`). Os demais valores são **iguais** aos do offline: a BrasilAPI e o arquivo local têm os
 mesmos feriados nacionais.
 
-**Confira:**
-- `1.5s` no offline = as esperas do backoff (0,5 s + 1 s). Se deu `0.0s`, o backoff não está esperando.
-- `dias úteis ... 10`: são 11 dias úteis de segunda a sexta, menos o feriado de Tiradentes (21/04).
-- `protocolo C1=ae788d33`: **o seu deve dar exatamente este valor** se você normalizou como na tabela (é um hash: qualquer
-  diferença na normalização muda tudo). Vale a pena acertar: os protocolos aparecem em todas as saídas a partir daqui.
+**Para entender a saída:**
+- `1.5s` no offline = as esperas do backoff (0,5 s + 1 s) antes de desistir e usar o arquivo local.
+- `dias úteis ... 10`: são 11 dias de segunda a sexta, menos o feriado de Tiradentes (21/04).
+- `protocolo C1=ae788d33`: o mesmo pedido gera sempre o mesmo protocolo. Ele vai aparecer em todas as saídas a partir daqui; se
+  os seus protocolos não baterem com os deste roteiro, o problema está nos campos que a **extração** devolveu (matrícula, tipo,
+  datas), não neste arquivo.
 
 ---
 
-## Etapa 5: MCP Server do RH (`mcp_rh.py` e `cliente_mcp.py`, 30 min)
+## Etapa 5: MCP Server do RH (`mcp_rh.py` e `cliente_mcp.py`, 35 min)
 
 | Lacuna | O que fazer | Onde olhar |
 |---|---|---|
@@ -321,13 +288,13 @@ Sim. Na equipe Cartório, a matrícula 1006 está de férias de 05/07/2027 a 19/
 
 ---
 
-## Etapa 6: especialistas e fluxo linear (35 min) ⇒ Marco mínimo
+## Etapa 6: especialistas e fluxo linear (30 min) ⇒ Marco mínimo
 
-### 6.0: regras objetivas (`regras.py`) primeiro: é Python puro
+### 6.0: regras objetivas (`regras.py`, **pronto**): leia e rode
 
-| Lacuna | O que fazer | Onde olhar |
-|---|---|---|
-| 6.0 | `violacoes_objetivas()` (N1, N2, N3, N4, N5, N6) e `precisa_chefia()` (N8) | `aula6/exemplos/11_grafo_real/main.py` (`avaliar_risco`: regra de negócio sem IA no meio do fluxo) |
+O `regras.py` já vem implementado: `violacoes_objetivas()` (N1, N2, N3, N4, N5, N6) e `precisa_chefia()` (N8). Compare cada `if`
+com a sua tabela da Etapa 0 (faltou ou sobrou alguma regra?). A ideia de colocar a regra de negócio em Python, no meio de um fluxo
+com IA, é a mesma do `avaliar_risco` em `aula6/exemplos/11_grafo_real/main.py`.
 
 ```powershell
 python regras.py
@@ -338,12 +305,11 @@ python regras.py
 ```
 C1: nenhuma violação  chefia=False  OK
 C2: nenhuma violação  chefia=True  OK
-C6: ['N5: escala']  chefia=False  OK
-C12: ['N3: início proibido']  chefia=False  OK
+C6: ['N5: a equipe já tem 1 afastado(s) no período: 1006 (2027-07-05 a 2027-07-19)']  chefia=False  OK
+C12: ['N3: as férias não podem começar em 2027-04-30 (véspera de feriado/fim de semana)']  chefia=False  OK
 ```
 
-O texto depois de `N5:` e `N3:` é seu; o teste só confere o **código** da regra. Se aparecer `ESPERADO [...]` no lugar de `OK`, a
-regra daquele caso está errada. A dúvida mais comum é a N5: descarte o **próprio** servidor da lista de afastamentos.
+Repare na N5: o próprio servidor é descartado da lista de afastamentos (senão um pedido conflitaria com ele mesmo).
 
 ### 6.1 a 6.4: agentes e fluxo linear
 
@@ -391,44 +357,9 @@ python etapa6_linear.py
 > **Depois da Etapa 9.2**, o C2 e o C11 deste fluxo linear passam a ser **negados** pelo server (`aprovador` = `pendente_chefia`,
 > que não é a chefia). É o comportamento certo: a aprovação de verdade só existe no grafo (Etapa 8).
 
-### 🆕 B: hooks que barram (`governanca.py`, 10 min)
-
-| Lacuna | O que fazer | Onde olhar |
-|---|---|---|
-| B.1 | `PERMISSOES` para Normas, Escala, Financeiro e Coordenador (os `tool_name` das `as_tool`) | `aula8/exemplos/06_excessive_agency/1_codigo_pronto/main.py` (o risco) |
-| B.2 | `on_tool_start`: conta; fora da lista ou acima de `max_tools` → `raise LimiteExcedido(...)` | `aula3/agente_hook2.py`, `aula3/agente_loop.py` (assinaturas dos métodos) |
-| B.3 | `on_llm_start`: idem para `max_llm` | `aula3/agente_hook3.py` |
-| B.4 | `testar_governanca()` em `etapa6_linear.py` | (contexto novo, sem exemplo) |
-
-```powershell
-python etapa6_linear.py --governanca
-```
-
-**Saída esperada** 🔸 (as mensagens são suas; o que importa está em negrito abaixo)
-
-```
-a) Coordenador com uma tool que não é dele
-[governança] Coordenador -> consultar_remuneracao: BARRADO (fora da lista do Coordenador)
-   barrado: Coordenador não pode usar consultar_remuneracao
-
-b) C2 com MAX_TOOLS = 1
-[governança] Coordenador -> parecer_normas: OK (1 de 1)
-[governança] Normas -> consultar_normas: BARRADO (orçamento de tools estourado: 2 de 1)
-   barrado: orçamento de tools estourado (2 de 1)
-```
-
-**Confira:**
-- A linha `[tool] consultar_remuneracao(1002) EXECUTOU` **não pode aparecer** no teste (a). Se aparecer, o hook não está
-  barrando **antes** da tool.
-- No (b), o bloqueio acontece **dentro** do primeiro especialista: o mesmo hook enxerga as tools de todos (por causa do
-  `hooks=hooks` nas `as_tool`). Isso é mais cedo do que "antes do segundo especialista", e está certo.
-- Se o bloqueio "sumir" e o Coordenador responder normalmente, faltou `failure_error_function=None` nas `as_tool`; se aparecer
-  um `UserError: Error running tool ...` em vez do seu `except`, a exceção não herda de `AgentsException` (já vem certo no
-  esqueleto: não mude).
-
 ---
 
-## Etapa 7: o grafo (`grafo.py`, 45 min)
+## Etapa 7: o grafo (`grafo.py`, 55 min)
 
 Faça na ordem abaixo: assim o grafo roda cedo e você testa caso a caso.
 
@@ -442,7 +373,7 @@ Faça na ordem abaixo: assim o grafo roda cedo e você testa caso a caso.
 | 7.5 (registrar) | `registrar()` chamando `registrar_decisao` no MCP | `aula6/desafio2/main.py` (`chamar_mcp` num nó) |
 
 > Até a Etapa 8, em `rotear_validacao` mande `"chefia"` também para `"registrar"`, e no `construir()` ainda não ligue
-> `"duvida"` nem `aprovacao_chefia`.
+> `aprovacao_chefia`. Deixe `USAR_VOTACAO` e `USAR_TRIAGEM_HUMANA` em `False` (são os opcionais 🆕 A e 🆕 C).
 
 ```powershell
 python grafo.py --mermaid
@@ -472,7 +403,7 @@ python grafo.py C6_conflito_de_escala
 
 ---
 
-## Etapa 8: persistência e aprovação da chefia (`grafo.py`, 25 min)
+## Etapa 8: persistência e aprovação da chefia (`grafo.py`, 30 min)
 
 | Lacuna | O que fazer | Onde olhar |
 |---|---|---|
@@ -502,7 +433,7 @@ python grafo.py --pendentes
 ```
 C12_inicio_proibido: concluído
 C11_diaria_exterior: PAUSADO em ('aprovacao_chefia',)
-C10_zona_cinzenta: PAUSADO em ('triagem_humana',)          <- só depois do 🆕 C
+C10_zona_cinzenta: concluído                                <- com o opcional 🆕 C: PAUSADO em ('triagem_humana',)
 C9_divergencia: concluído
 C8_idempotencia: concluído
 C7_autoaprovacao: concluído
@@ -557,58 +488,9 @@ python grafo.py --retomar C11_diaria_exterior sim 1011
   com efeito colateral pode vir antes do `interrupt()`.
 - Duas rejeições seguidas → o registro sai com `decisao` = `indeferido_pela_chefia`.
 
-### 🆕 C: o humano decide a entrada (10 min)
-
-| Lacuna | O que fazer | Onde olhar |
-|---|---|---|
-| C.1 | `proteger_entrada` e `rotear_entrada` com duas faixas (`ok` / `duvida` / `bloqueado`) | (contexto novo) |
-| C.2 | `triagem_humana` com `interrupt()`, `rotear_triagem` e as arestas | `aula7/exemplos/06_human_in_the_loop/main.py` (o mecanismo), `aula7/desafio2/` (duas pessoas no mesmo fluxo) |
-
-```powershell
-python grafo.py C10_zona_cinzenta
-```
-
-**Saída esperada** ✅
-
-```
-[C10_zona_cinzenta] caminho: receber -> proteger_entrada
-[C10_zona_cinzenta] PAUSADO em ('triagem_humana',): Este texto deve seguir como pedido ao RH?
-   retome com: python grafo.py --retomar C10_zona_cinzenta sim|"nao:motivo" <quem>
-```
-
-**O atendente recusa, com orientação** ✅
-
-```powershell
-python grafo.py --retomar C10_zona_cinzenta "nao:procure a junta médica ou peça licença para acompanhar familiar" rh
-```
-
-```
-[C10_zona_cinzenta] caminho: receber -> proteger_entrada -> triagem_humana -> recusar
-[C10_zona_cinzenta] resultado: recusado  protocolo: None
-[C10_zona_cinzenta] despacho: procure a junta médica ou peça licença para acompanhar familiar
-```
-
-**O atendente deixa seguir** (rode o C10 de novo antes, porque o anterior terminou):
-
-```powershell
-python grafo.py C10_zona_cinzenta
-python grafo.py --retomar C10_zona_cinzenta "sim:tratar como abono" rh
-```
-
-```
-[C10_zona_cinzenta] caminho: receber -> proteger_entrada -> triagem_humana -> extrair -> ...
-```
-
-🔸 O que vem depois de `extrair` depende do LLM: o pedido não tem data exata ("semana que vem"), então o mais comum é
-`-> pedir_dados`. Se o modelo calcular uma data a partir de hoje, o caminho segue até `registrar`.
-
-**Confira:** C1 não pausa nenhuma vez; C2 pausa só na chefia; C10 pausa na triagem (e, se seguir até virar férias, pode pausar
-**de novo** na chefia: duas pessoas diferentes no mesmo fluxo). Se o C10 não pausar, recalibre `LIMIAR_OK`/`LIMIAR_BLOQUEIO`
-com a nota que você anotou na Etapa 3.
-
 ---
 
-## Etapa 9: segurança (`mcp_rh.py` e `grafo.py`, 20 min) ⇒ Marco completo
+## Etapa 9: segurança (`mcp_rh.py` e `grafo.py`, 25 min) ⇒ Marco completo
 
 | Lacuna | O que fazer | Onde olhar |
 |---|---|---|
@@ -677,7 +559,7 @@ Uma linha completa, para comparar o formato:
 
 | Lacuna | O que fazer | Onde olhar |
 |---|---|---|
-| 10.1 | `on_tool_end` e `on_agent_end` acrescentam a `self.eventos` (tool, argumentos, resultado, tokens) | `aula3/agente_hook2.py`, `aula5/exemplos/11_observabilidade/agente_observavel.py` |
+| 10.1 | Em `governanca.py`, `on_tool_end` e `on_agent_end` acrescentam a `self.eventos` (tool, argumentos, resultado, tokens); passe `hooks=Governanca()` nos `rodar_com_limites_sync` dos nós | `aula3/agente_hook2.py`, `aula5/exemplos/11_observabilidade/agente_observavel.py` |
 | 10.2 | `medido()`: tempo por nó numa linha de `saidas/metricas.jsonl` | `aula8/exemplos/03_observabilidade/1_codigo_pronto/passo1_trace.py` (a ideia de span por etapa) |
 | 10.3 | `resumo(thread_id)` | (leitura do JSONL) |
 
@@ -709,7 +591,7 @@ Resumo:
 }
 ```
 
-**Confira:** o nó `extrair` deve gastar cerca de **3 vezes** os tokens de um extrator só (é o custo da votação do 🆕 A). Os nós
+**Confira:** se você fez o opcional 🆕 A, o nó `extrair` gasta cerca de **3 vezes** os tokens de um extrator só. Os nós
 sem LLM que chamam o MCP (`identificar_servidor`, `calcular_periodo`) levam cerca de 1 s cada, porque cada `chamar_mcp` sobe o
 server de novo: bom assunto para a pergunta "o que mudaria em produção?".
 
@@ -723,7 +605,6 @@ server de novo: bom assunto para a pergunta "o que mudaria em produção?".
    python grafo.py --todos
    python grafo.py --retomar C2_ferias_com_venda sim 1010
    python grafo.py --retomar C11_diaria_exterior sim 1011
-   python grafo.py --retomar C10_zona_cinzenta "nao:procure a junta médica" rh
    ```
 
 2. Preencha a tabela do `ENTREGA.md` e compare com a referência abaixo.
@@ -741,12 +622,14 @@ estiverem certas)
 | C6 | ... `consolidar -> redigir_despacho -> validar -> registrar` | registrado (**indeferido**, N5) | `6f1b47d7` |
 | C7 | `receber -> proteger_entrada -> recusar` | recusado (fora do escopo / manipulação) | |
 | C8 | igual ao C1 | **duplicado** | `ae788d33` |
-| C9 | `receber -> proteger_entrada -> extrair -> pedir_dados` 🔸 | pediu dados (divergência) | |
-| C10 | `receber -> proteger_entrada` → **pausa** em `triagem_humana` → (nao) `recusar` | recusado com orientação | |
+| C9 | `receber -> proteger_entrada -> extrair -> pedir_dados` 🔸 | pediu dados (pedido vago, sem datas exatas) | |
+| C10 | `receber -> proteger_entrada -> extrair -> pedir_dados` 🔸 | pediu dados (ou recusado, se a nota passar do `LIMIAR`) | |
 | C11 | ... `validar` → **pausa** em `aprovacao_chefia` → (sim 1011) `registrar` | registrado (deferido pela 1011) | `ec67dba1` |
 | C12 | ... `consolidar -> redigir_despacho -> validar -> registrar` | registrado (**indeferido**, N3) | `7c458e62` |
 
-🔸 O C9 depende da votação: se os 3 extratores concordarem por acaso, ele segue adiante. Registre no `ENTREGA.md` o que aconteceu.
+🔸 C9 e C10 dependem do LLM: se o extrator "inventar" datas, eles seguem adiante (e isso é um erro de extração a corrigir nas
+instruções). Registre no `ENTREGA.md` o que aconteceu. Com os opcionais, o C9 sai por `divergencia` (🆕 A) e o C10 pausa em
+`triagem_humana` (🆕 C).
 
 **O diagrama** (`python grafo.py --mermaid`) ✅: o seu deve ter estes nós e estas arestas (a ordem das linhas pode variar):
 
@@ -767,11 +650,8 @@ estiverem certas)
 	normas --> consolidar;
 	proteger_entrada -. &nbsp;ok&nbsp; .-> extrair;
 	proteger_entrada -. &nbsp;bloqueado&nbsp; .-> recusar;
-	proteger_entrada -. &nbsp;duvida&nbsp; .-> triagem_humana;
 	receber --> proteger_entrada;
 	redigir_despacho --> validar;
-	triagem_humana -. &nbsp;segue&nbsp; .-> extrair;
-	triagem_humana -. &nbsp;recusa&nbsp; .-> recusar;
 	validar -. &nbsp;chefia&nbsp; .-> aprovacao_chefia;
 	validar -. &nbsp;redigir&nbsp; .-> redigir_despacho;
 	validar -.-> registrar;
@@ -780,8 +660,142 @@ estiverem certas)
 	registrar --> __end__;
 ```
 
-Cole a saída completa em <https://mermaid.live> para ver o desenho. Repare: `escala`, `financeiro` e `normas` entram em
+Com o opcional 🆕 C ligado, aparecem também `proteger_entrada -. duvida .-> triagem_humana`, `triagem_humana -. segue .-> extrair`
+e `triagem_humana -. recusa .-> recusar`. Cole a saída completa em <https://mermaid.live> para ver o desenho. Repare: `escala`, `financeiro` e `normas` entram em
 `consolidar` com setas **cheias** (fan-in por lista); as **pontilhadas** são as decisões (arestas condicionais).
+
+---
+
+## Itens opcionais 🆕 (bônus: só depois do Marco completo)
+
+Os três itens abaixo usam um conceito já visto em aula num contexto novo. **Nenhum é necessário** para o sistema funcionar:
+faça-os só se terminou a Etapa 9 (ou a 11) e sobrou tempo. Cada um vale até +5 pontos de bônus.
+
+### 🆕 A: votação em paralelo (`extracao.py`, +5 pontos)
+
+| Lacuna | O que fazer | Onde olhar |
+|---|---|---|
+| A.1 | 3 instruções diferentes em `INSTRUCOES_VOTANTES` | (contexto novo, sem exemplo) |
+| A.2 | `extrair_com_votacao()`: `await asyncio.gather(*(Runner.run(e, texto) for e in extratores))` | `aula7/exemplos/08_paralelismo/main.py` (o conceito: fan-out/fan-in); `aula3/agente_parada3.py` (`Runner.run` com `asyncio`) |
+| A.3 | `votar()`: maioria com `Counter(...).most_common(1)`; sem maioria em tipo/datas → `divergencia=True` | (contexto novo) |
+| A.4 | Medir o tempo dos 3 em sequência para o C2 | `aula7/exemplos/08_paralelismo/main.py` (medição de tempo) |
+
+```powershell
+python extracao.py --votacao
+```
+
+**Saída esperada** 🔸
+
+```
+C1_abono_simples  (1.9s, divergencia=False)
+  voto 1: tipo=abono 2027-04-09..2027-04-09 vende=0
+  voto 2: tipo=abono 2027-04-09..2027-04-09 vende=0
+  voto 3: tipo=abono 2027-04-09..2027-04-09 vende=0
+  decisão: {'tipo': <TipoPedido.ABONO: 'abono'>, 'matricula': '1001', ...}
+
+C2_ferias_com_venda  (2.3s, divergencia=False)
+  voto 1: tipo=ferias 2027-04-12..2027-04-26 vende=10
+  ... (os 3 iguais)
+
+C9_divergencia  (2.4s, divergencia=True)
+  voto 1: tipo=ferias 2027-03-22..2027-03-31 vende=0
+  voto 2: tipo=ferias 2027-03-25..2027-04-03 vende=5
+  voto 3: tipo=ferias None..None vende=0
+  decisão: {...}
+paralelo: 2.3s | sequencial: 6.8s
+```
+
+Para usar no grafo: `USAR_VOTACAO = True` em `grafo.py` (e, no `no_extrair`, chame `extrair_com_votacao`).
+
+**Confira:** C1 e C2 **unânimes**; o C9 é um pedido vago de propósito ("uns dez dias perto da Páscoa"): o normal é os votos
+discordarem nas datas e sair `divergencia=True`. O tempo em paralelo deve ficar perto do de **uma** chamada, e o sequencial,
+perto de **três**.
+
+### 🆕 B: hooks que barram (`governanca.py`, +5 pontos)
+
+| Lacuna | O que fazer | Onde olhar |
+|---|---|---|
+| B.1 | `PERMISSOES` para Normas, Escala, Financeiro e Coordenador (os `tool_name` das `as_tool`) | `aula8/exemplos/06_excessive_agency/1_codigo_pronto/main.py` (o risco) |
+| B.2 | `on_tool_start`: conta; fora da lista ou acima de `max_tools` → `raise LimiteExcedido(...)` | `aula3/agente_hook2.py`, `aula3/agente_loop.py` (assinaturas dos métodos) |
+| B.3 | `on_llm_start`: idem para `max_llm` | `aula3/agente_hook3.py` |
+| B.4 | `testar_governanca()` em `etapa6_linear.py` | (contexto novo, sem exemplo) |
+
+```powershell
+python etapa6_linear.py --governanca
+```
+
+**Saída esperada** 🔸 (as mensagens são suas; o que importa está em negrito abaixo)
+
+```
+a) Coordenador com uma tool que não é dele
+[governança] Coordenador -> consultar_remuneracao: BARRADO (fora da lista do Coordenador)
+   barrado: Coordenador não pode usar consultar_remuneracao
+
+b) C2 com MAX_TOOLS = 1
+[governança] Coordenador -> parecer_normas: OK (1 de 1)
+[governança] Normas -> consultar_normas: BARRADO (orçamento de tools estourado: 2 de 1)
+   barrado: orçamento de tools estourado (2 de 1)
+```
+
+**Confira:**
+- A linha `[tool] consultar_remuneracao(1002) EXECUTOU` **não pode aparecer** no teste (a). Se aparecer, o hook não está
+  barrando **antes** da tool.
+- No (b), o bloqueio acontece **dentro** do primeiro especialista: o mesmo hook enxerga as tools de todos (por causa do
+  `hooks=hooks` nas `as_tool`). Isso é mais cedo do que "antes do segundo especialista", e está certo.
+- Se o bloqueio "sumir" e o Coordenador responder normalmente, faltou `failure_error_function=None` nas `as_tool`; se aparecer
+  um `UserError: Error running tool ...` em vez do seu `except`, a exceção não herda de `AgentsException` (já vem certo no
+  esqueleto: não mude).
+
+### 🆕 C: o humano decide a entrada (`grafo.py`, +5 pontos)
+
+Ligue `USAR_TRIAGEM_HUMANA = True` em `grafo.py`: o nó `triagem_humana` só entra no grafo com ele ligado.
+
+| Lacuna | O que fazer | Onde olhar |
+|---|---|---|
+| C.1 | `proteger_entrada` e `rotear_entrada` com duas faixas (`ok` / `duvida` / `bloqueado`) | (contexto novo) |
+| C.2 | `triagem_humana` com `interrupt()`, `rotear_triagem` e as arestas | `aula7/exemplos/06_human_in_the_loop/main.py` (o mecanismo), `aula7/desafio2/` (duas pessoas no mesmo fluxo) |
+
+```powershell
+python grafo.py C10_zona_cinzenta
+```
+
+**Saída esperada** ✅
+
+```
+[C10_zona_cinzenta] caminho: receber -> proteger_entrada
+[C10_zona_cinzenta] PAUSADO em ('triagem_humana',): Este texto deve seguir como pedido ao RH?
+   retome com: python grafo.py --retomar C10_zona_cinzenta sim|"nao:motivo" <quem>
+```
+
+**O atendente recusa, com orientação** ✅
+
+```powershell
+python grafo.py --retomar C10_zona_cinzenta "nao:procure a junta médica ou peça licença para acompanhar familiar" rh
+```
+
+```
+[C10_zona_cinzenta] caminho: receber -> proteger_entrada -> triagem_humana -> recusar
+[C10_zona_cinzenta] resultado: recusado  protocolo: None
+[C10_zona_cinzenta] despacho: procure a junta médica ou peça licença para acompanhar familiar
+```
+
+**O atendente deixa seguir** (rode o C10 de novo antes, porque o anterior terminou):
+
+```powershell
+python grafo.py C10_zona_cinzenta
+python grafo.py --retomar C10_zona_cinzenta "sim:tratar como abono" rh
+```
+
+```
+[C10_zona_cinzenta] caminho: receber -> proteger_entrada -> triagem_humana -> extrair -> ...
+```
+
+🔸 O que vem depois de `extrair` depende do LLM: o pedido não tem data exata ("semana que vem"), então o mais comum é
+`-> pedir_dados`. Se o modelo calcular uma data a partir de hoje, o caminho segue até `registrar`.
+
+**Confira:** C1 não pausa nenhuma vez; C2 pausa só na chefia; C10 pausa na triagem (e, se seguir até virar férias, pode pausar
+**de novo** na chefia: duas pessoas diferentes no mesmo fluxo). Se o C10 não pausar, recalibre `LIMIAR_OK`/`LIMIAR_BLOQUEIO`
+com a nota que você anotou na Etapa 3.
 
 ---
 
@@ -789,7 +803,8 @@ Cole a saída completa em <https://mermaid.live> para ver o desenho. Repare: `es
 
 | Sintoma | Causa provável | O que fazer |
 |---|---|---|
-| `NotImplementedError: ETAPA n.m` | Falta implementar aquela lacuna (às vezes de **outro** arquivo: o `regras.py` para na 4.3 se o `ferramentas.py` não estiver pronto) | Implemente a etapa citada na mensagem |
+| `NotImplementedError: ETAPA n.m` | Falta implementar aquela lacuna (às vezes de **outro** arquivo: o `guardrails.py` para na 2.2 se o extrator ainda não existe) | Implemente a etapa citada na mensagem |
+| `NotImplementedError: 🆕 ...` | Você ligou um item opcional (`USAR_VOTACAO`, `USAR_TRIAGEM_HUMANA` ou `--governanca`) sem implementá-lo | Volte a chave para `False` ou faça o item |
 | `SystemExit: PROVEDOR=openai exige OPENAI_API_KEY` | `.env` sem chave, ou você não está dentro de `aula10/` | Preencha o `.env` e rode de dentro de `aula10/` |
 | `HTTP Error 403` na BrasilAPI | Requisição sem `User-Agent` | Envie o cabeçalho (veja `aula6/exemplos/11_grafo_real/main.py`) |
 | `RuntimeError: MCP consultar_xxx: [TextContent(... text='Error executing tool consultar_xxx' ...)]` | Erro **dentro** da tool do server; o detalhe não chega ao cliente | Chame a tool no MCP Inspector, que mostra o traceback |

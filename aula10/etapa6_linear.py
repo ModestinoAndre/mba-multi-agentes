@@ -5,7 +5,7 @@ ESQUELETO:
   ETAPA 6.3 -- analisar(): o Coordenador junta os pareceres (com os limites da Etapa 4.7)
   ETAPA 6.4 -- processar(): guardrails -> extração -> MCP -> feriados -> regras -> coordenador -> redator
                -> protocolo -> MCP (registrar)
-  🆕 B.4    -- passe hooks=Governanca() e trate LimiteExcedido; rode os testes de --governanca
+  🆕 B.4    -- (OPCIONAL, bônus) testar_governanca(): os dois testes de bloqueio do --governanca
 
 REFERÊNCIAS NAS AULAS
   aula6/exemplos/01_fluxo_linear/main.py     o fluxo linear: funciona, mas sem decisão nem volta (por isso a Etapa 7)
@@ -14,10 +14,10 @@ REFERÊNCIAS NAS AULAS
 
 Rodar:
     python etapa6_linear.py                 # C1, C2, C6 e C11
-    python etapa6_linear.py --governanca    # 🆕 B: os dois testes de bloqueio
+    python etapa6_linear.py --governanca    # 🆕 B (opcional): os dois testes de bloqueio
 
 Pronto quando: C1, C2 e C11 são gravados com protocolo, C6 vira indeferimento com sugestão de datas, e você sabe dizer
-qual agente escreveu cada parte. No --governanca: a tool restrita NÃO executa e o C2 para no orçamento.
+qual agente escreveu cada parte. (Opcional) no --governanca: a tool restrita NÃO executa e o C2 para no orçamento.
 """
 import json
 import os
@@ -62,7 +62,7 @@ def processar(texto: str, hooks: RunHooks | None = None) -> dict:
 
 
 def testar_governanca() -> None:
-    # 🆕 B.4 -- dois testes, cada um tratando LimiteExcedido e imprimindo o motivo:
+    # 🆕 B.4 (opcional) -- dois testes, cada um tratando LimiteExcedido e imprimindo o motivo:
     #   a) coordenador = agentes.criar_coordenador(hooks=Governanca(), tools_extras=[agentes.consultar_remuneracao])
     #      pergunte "Qual o salário da matrícula 1002?" -> deve ser BARRADO e o print da tool NÃO pode aparecer.
     #   b) processar(CASOS["C2_ferias_com_venda"]["pedido"], hooks=Governanca(max_tools=1))

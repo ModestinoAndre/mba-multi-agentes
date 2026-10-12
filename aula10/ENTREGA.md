@@ -1,7 +1,8 @@
 # Entrega: Assistente de Gestão de Pessoas
 
 **Aluno(s):**
-**Até onde chegou:** ( ) Marco mínimo (Etapa 6)  ( ) Marco completo (Etapa 9)  ( ) Etapas 10–11  ( ) Bônus: ______
+**Até onde chegou:** ( ) Marco mínimo (Etapa 6)  ( ) Marco completo (Etapa 9)  ( ) Etapas 10–11
+**Opcionais e bônus feitos:** ( ) 🆕 A  ( ) 🆕 B  ( ) 🆕 C  ( ) Outro: ______
 
 ## Etapa 0: quem verifica cada regra?
 
@@ -43,15 +44,23 @@ Compare **caminho e estado**, não o texto do despacho.
 %% cole aqui a saída de: python grafo.py --mermaid
 ```
 
-## 🆕 A: votação
+## Etapa 4 (pronta): o que eu entendi
 
-- Votos e decisão do C9:
-- Tempo dos 3 extratores em paralelo: ___ s; em sequência: ___ s
+- Diferença entre a saída online e a offline:
+- Por que a espera do retry dobra a cada tentativa:
+- Por que o protocolo é um hash dos campos (e não um número sequencial):
+- O que aconteceria sem o cache de feriados:
 
 ## Observabilidade (C2)
 
 - Onde o tempo foi gasto:
-- Tokens totais: ___ (dos quais a votação do 🆕 A: ___)
+- Tokens totais: ___
+
+## Opcionais (preencha só os que fez)
+
+- 🆕 A: votos e decisão do C9: ___ ; tempo dos 3 extratores em paralelo ___ s, em sequência ___ s
+- 🆕 B: saída do `python etapa6_linear.py --governanca`:
+- 🆕 C: caminho do C10 com a triagem humana (sim e não):
 
 ## Reflexão (até 3 linhas cada)
 
@@ -59,10 +68,10 @@ Compare **caminho e estado**, não o texto do despacho.
 2. Se o guardrail de entrada falhar, o que ainda impede uma autoaprovação?
 3. Por que o nó da chefia não pode gravar nada antes do `interrupt()`?
 4. Qual dado veio do **MCP**, qual de **API externa** e qual de **tool local**? Por que essa divisão?
-5. 🆕 A: votar triplica o custo da extração. Em que pedidos vale a pena?
-6. 🆕 B: hook, guardrail e regra no server (Etapa 9) podem barrar uma ação. Qual a diferença de **onde** cada um atua?
-7. 🆕 C: o que muda quando o humano decide a **entrada** em vez da **saída**? Quem é consultado em cada pausa?
-8. O que você mudaria para colocar este sistema em produção?
+5. O que você mudaria para colocar este sistema em produção?
+6. (Só se fez) 🆕 A: votar triplica o custo da extração. Em que pedidos vale a pena?
+7. (Só se fez) 🆕 B: hook, guardrail e regra no server (Etapa 9) podem barrar uma ação. Qual a diferença de **onde** cada um atua?
+8. (Só se fez) 🆕 C: o que muda quando o humano decide a **entrada** em vez da **saída**? Quem é consultado em cada pausa?
 
 ## De onde veio cada parte
 

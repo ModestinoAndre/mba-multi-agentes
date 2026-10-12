@@ -1,5 +1,5 @@
 """
-ETAPAS 7, 8, 🆕 C, 9 e 10 -- O sistema como GRAFO (LangGraph), com persistência, humanos no fluxo e segurança.
+ETAPAS 7, 8, 9 e 10 (e o opcional 🆕 C) -- O sistema como GRAFO (LangGraph), com persistência, humanos no fluxo e segurança.
 
 Reaproveite TUDO o que você já fez: cada nó só chama funções e agentes das etapas anteriores e devolve O QUE MUDOU
 no estado (mais o próprio nome em "caminho").
@@ -14,10 +14,12 @@ ESQUELETO: implemente as etapas na ordem (troque cada raise NotImplementedError 
   ETAPA 8.2 -- aprovacao_chefia com interrupt()
   ETAPA 8.3 -- rotear_chefia: aprovado / rejeitado (máx. 2) / indeferido_pela_chefia
   ETAPA 8.4 -- listar_pendentes() e retomar() com Command(resume=...)
-  🆕 C.1   -- proteger_entrada com DUAS faixas (ok / dúvida / bloqueado)
-  🆕 C.2   -- triagem_humana com interrupt() e rotear_triagem
   ETAPA 9.4 -- guardrail de SAÍDA no registrar (despacho sem CPF/CID, N10)
   (ETAPA 9.2/9.3 ficam no mcp_rh.py; ETAPA 10 em observabilidade.py e governanca.py)
+  --- OPCIONAIS (bônus): o grafo funciona sem eles. Faça só se sobrar tempo, depois da Etapa 9.
+  🆕 A     -- ligue USAR_VOTACAO = True (depois de fazer o 🆕 A em extracao.py)
+  🆕 C.1   -- proteger_entrada com DUAS faixas (ok / dúvida / bloqueado)
+  🆕 C.2   -- triagem_humana com interrupt() e rotear_triagem; depois ligue USAR_TRIAGEM_HUMANA = True
 
 REFERÊNCIAS NAS AULAS
   aula6/exemplos/05_multiplos_nos/main.py          nós devolvem só o que mudou
@@ -42,7 +44,7 @@ Rodar (a partir de aula10/):
     python grafo.py --pendentes                   # ETAPA 8.4: quem está pausado e onde
     python grafo.py --retomar C2_ferias_com_venda sim 1010             # a chefia 1010 aprova
     python grafo.py --retomar C2_ferias_com_venda "nao:mude as datas" 1010
-    python grafo.py --retomar C10_zona_cinzenta "sim:tratar como abono" rh   # 🆕 C: o atendente do RH decide
+    python grafo.py --retomar C10_zona_cinzenta "sim:tratar como abono" rh   # 🆕 C (opcional): o atendente do RH decide
     python grafo.py --sem-guardrail C7_autoaprovacao   # ETAPA 9.5: o server ainda nega?
     python grafo.py --mermaid                     # o diagrama
 """
@@ -71,9 +73,10 @@ MODELO = configurar()
 
 MAX_TENTATIVAS = 3     # ciclo redigir <-> validar
 MAX_REJEICOES = 2      # ciclo chefia -> redigir
+USAR_VOTACAO = False          # 🆕 A (opcional): True usa os 3 extratores com votação (extracao.py)
+USAR_TRIAGEM_HUMANA = False   # 🆕 C (opcional): True liga as duas faixas e o nó triagem_humana
 LIMIAR_OK = 0.4        # 🆕 C: abaixo disto, segue direto
 LIMIAR_BLOQUEIO = 0.8  # 🆕 C: a partir disto, bloqueia; entre os dois, um humano decide
-USAR_VOTACAO = True    # 🆕 A: False usa um único extrator (útil para depurar mais rápido)
 GUARDRAIL_LIGADO = "--sem-guardrail" not in sys.argv  # ETAPA 9.5
 
 
@@ -130,18 +133,19 @@ def proteger_entrada(estado: Estado) -> dict:
     #   encontrar_dado_sensivel(texto) -> {"bloqueado": True, "motivo_bloqueio": MENSAGENS["cpf" ou "cid"]}
     #   nota, motivo = nota_escopo(texto); nota >= LIMIAR -> bloqueado com MENSAGENS["fora_do_escopo"]
     #   Guarde "nota_escopo" no estado. Sempre devolva "caminho": ["proteger_entrada"].
-    # 🆕 C.1 -- troque o LIMIAR único por DUAS faixas: < LIMIAR_OK segue; >= LIMIAR_BLOQUEIO bloqueia;
-    #   no meio, devolva bloqueado=False mas deixe a nota no estado: o roteador manda para triagem_humana.
+    # 🆕 C.1 (opcional) -- com USAR_TRIAGEM_HUMANA, troque o LIMIAR único por DUAS faixas: < LIMIAR_OK segue;
+    #   >= LIMIAR_BLOQUEIO bloqueia; no meio, bloqueado=False com a nota no estado: o roteador manda para triagem_humana.
     raise NotImplementedError("ETAPA 7.2: proteger_entrada")
 
 
 def rotear_entrada(estado: Estado) -> str:
-    # ETAPA 7.2 -- "bloqueado" ou "ok".   🆕 C.1 -- e "duvida" (nota entre LIMIAR_OK e LIMIAR_BLOQUEIO)
+    # ETAPA 7.2 -- "bloqueado" ou "ok".
+    #   🆕 C.1 (opcional) -- com USAR_TRIAGEM_HUMANA, também "duvida" (nota entre LIMIAR_OK e LIMIAR_BLOQUEIO)
     raise NotImplementedError("ETAPA 7.2: rotear_entrada")
 
 
 def triagem_humana(estado: Estado) -> dict:
-    # 🆕 C.2 -- resposta = interrupt({"pergunta": "Este texto deve seguir como pedido ao RH?",
+    # 🆕 C.2 (opcional) -- resposta = interrupt({"pergunta": "Este texto deve seguir como pedido ao RH?",
     #                                  "texto": ..., "nota": ..., "quem_decide": "atendente do RH"})
     #   `resposta` é o que o retomar() entregar: {"segue": bool, "orientacao": str, "quem": str}.
     #   Se segue, ANEXE a orientação ao texto (ex.: "[RH: tratar como abono]") para o extrator usar.
@@ -156,8 +160,8 @@ def rotear_triagem(estado: Estado) -> str:
 
 
 def no_extrair(estado: Estado) -> dict:
-    # ETAPA 7.2 -- USAR_VOTACAO: pedido, divergencia, votos = asyncio.run(extrair_com_votacao(texto))  (🆕 A)
-    #              senão:        pedido = extrair(texto); divergencia = False
+    # ETAPA 7.2 -- pedido = extrair(texto); divergencia = False
+    #   🆕 A (opcional) -- se USAR_VOTACAO: pedido, divergencia, votos = asyncio.run(extrair_com_votacao(texto))
     #   Devolva {"pedido": pedido.model_dump(mode="json"), "divergencia": ..., "caminho": ["extrair"]}
     raise NotImplementedError("ETAPA 7.2: no_extrair")
 
@@ -273,21 +277,23 @@ def registrar(estado: Estado) -> dict:
 def construir(checkpointer=None):
     construtor = StateGraph(Estado)
     nos = {
-        "receber": receber, "proteger_entrada": proteger_entrada, "triagem_humana": triagem_humana,
+        "receber": receber, "proteger_entrada": proteger_entrada,
         "recusar": recusar, "extrair": no_extrair, "pedir_dados": pedir_dados,
         "identificar_servidor": identificar_servidor, "calcular_periodo": calcular_periodo,
         "normas": no_normas, "escala": no_escala, "financeiro": no_financeiro, "consolidar": consolidar,
         "redigir_despacho": redigir_despacho, "validar": validar, "aprovacao_chefia": aprovacao_chefia,
         "registrar": registrar,
     }
+    if USAR_TRIAGEM_HUMANA:  # 🆕 C (opcional): o nó só entra no grafo quando o item está ligado
+        nos["triagem_humana"] = triagem_humana
     for nome, funcao in nos.items():
         construtor.add_node(nome, medido(nome, funcao))  # medido(): ETAPA 10.2 (por enquanto, não muda nada)
 
     # ETAPA 7.5 -- ligue o grafo do ENUNCIADO.md:
     #   add_edge(START, "receber"); add_edge("receber", "proteger_entrada")
-    #   add_conditional_edges("proteger_entrada", rotear_entrada, {"bloqueado": "recusar", "ok": "extrair",
-    #                                                              "duvida": "triagem_humana"})   # "duvida": 🆕 C
-    #   add_conditional_edges("triagem_humana", rotear_triagem, {...})                            # 🆕 C
+    #   add_conditional_edges("proteger_entrada", rotear_entrada, {"bloqueado": "recusar", "ok": "extrair"})
+    #   🆕 C (opcional) -- se USAR_TRIAGEM_HUMANA: acrescente "duvida": "triagem_humana" ao dicionário acima e
+    #                      add_conditional_edges("triagem_humana", rotear_triagem, {"segue": "extrair", "recusa": "recusar"})
     #   ... extrair, identificar_servidor (condicionais) -> calcular_periodo
     #   fan-out: calcular_periodo -> normas, escala, financeiro
     #   fan-in : add_edge(["normas", "escala", "financeiro"], "consolidar")   (LISTA: espera os três)
@@ -338,7 +344,7 @@ def retomar(app, thread_id: str, resposta: str, quem: str) -> None:
     #   - ("aprovacao_chefia",): valor = {"aprovado": resposta == "sim", "aprovador": quem,
     #                                    "motivo": o texto depois de "nao:"}
     #   - ("triagem_humana",)  : valor = {"segue": resposta começa com "sim", "orientacao": o texto depois de ":",
-    #                                    "quem": quem}                                                  (🆕 C)
+    #                                    "quem": quem}                                    (só com o 🆕 C, opcional)
     #   saida = app.invoke(Command(resume=valor), config_de(thread_id)); mostrar(app, thread_id, saida)
     #   Nada pausado? Diga isso e não faça nada (e se retomarem duas vezes?).
     #   Referência: aula7/exemplos/06_human_in_the_loop/main.py (retomar)
