@@ -13,7 +13,7 @@ ESQUELETO: implemente as etapas na ordem (troque cada raise NotImplementedError 
   ETAPA 8.1 -- compilar com o checkpointer SQLite (já está em main(); confira)
   ETAPA 8.2 -- aprovacao_chefia com interrupt()
   ETAPA 8.3 -- rotear_chefia: aprovado / rejeitado (máx. 2) / indeferido_pela_chefia
-  ETAPA 8.4 -- listar_pendentes() e retomar() com Command(resume=...)
+  ETAPA 8.4 -- retomar() com Command(resume=...) (o listar_pendentes() já vem pronto: leia)
   ETAPA 9.4 -- guardrail de SAÍDA no registrar (despacho sem CPF/CID, N10)
   (ETAPA 9.2/9.3 ficam no etapa05_mcp_rh.py; ETAPA 10 em etapa10_observabilidade.py e etapa10_governanca.py)
   --- OPCIONAIS (bônus): o grafo funciona sem eles. Faça só se sobrar tempo, depois da Etapa 9.
@@ -41,7 +41,7 @@ REFERÊNCIAS NAS AULAS
 Rodar (a partir de aula10/):
     python etapa07_grafo.py C2_ferias_com_venda           # um caso (o nome do caso é o thread_id)
     python etapa07_grafo.py --todos                       # os 12 casos
-    python etapa07_grafo.py --pendentes                   # ETAPA 8.4: quem está pausado e onde
+    python etapa07_grafo.py --pendentes                   # quem está pausado e onde (pronto)
     python etapa07_grafo.py --retomar C2_ferias_com_venda sim 1010             # a chefia 1010 aprova
     python etapa07_grafo.py --retomar C2_ferias_com_venda "nao:mude as datas" 1010
     python etapa07_grafo.py --retomar C10_zona_cinzenta "sim:tratar como abono" rh   # 🆕 C (opcional): o atendente do RH decide
@@ -230,10 +230,26 @@ def redigir_despacho(estado: Estado) -> dict:
     raise NotImplementedError("ETAPA 7.4: redigir_despacho")
 
 
+def problemas_do_despacho(despacho: str, pedido: dict) -> list[str]:
+    """(PRONTO) O que falta ou sobra no despacho: precisa citar a matrícula, o início do período (AAAA-MM-DD ou
+    DD/MM/AAAA) e a decisão, e não pode ter CPF nem CID (N10). Lista vazia = despacho válido."""
+    problemas, texto = [], despacho.lower()
+    if pedido.get("matricula") and pedido["matricula"] not in despacho:
+        problemas.append(f"cite a matrícula {pedido['matricula']}")
+    inicio = pedido.get("data_inicio") or ""
+    if inicio and inicio not in despacho and "/".join(reversed(inicio.split("-"))) not in despacho:
+        problemas.append(f"cite o início do período ({inicio})")
+    if "deferid" not in texto and "indeferid" not in texto:
+        problemas.append("diga a decisão (deferido ou indeferido)")
+    if encontrar_dado_sensivel(despacho):
+        problemas.append("tire o CPF/CID do despacho (N10)")
+    return problemas
+
+
 def validar(estado: Estado) -> dict:
-    # ETAPA 7.4 -- regra (sem LLM) ou um agente validador: o despacho é válido se citar a MATRÍCULA, o PERÍODO
-    #   (data_inicio) e a DECISÃO (deferido/indeferido), e NÃO contiver CPF nem CID (encontrar_dado_sensivel).
-    #   Devolva {"tentativas": estado["tentativas"] + 1, "erro_validacao": "" ou o motivo, "caminho": ["validar"]}
+    # ETAPA 7.4 -- use problemas_do_despacho(estado["despacho"], estado["pedido"]) (pronta, logo acima) e devolva
+    #   {"tentativas": estado["tentativas"] + 1, "erro_validacao": "; ".join(problemas), "caminho": ["validar"]}
+    #   O ponto da etapa é o CICLO: é esta contagem de tentativas que o rotear_validacao usa para parar.
     raise NotImplementedError("ETAPA 7.4: validar")
 
 
@@ -332,11 +348,16 @@ def executar(app, thread_id: str, texto: str) -> None:
 
 
 def listar_pendentes(app, checkpointer) -> None:
-    # ETAPA 8.4 -- percorra checkpointer.list(None) (todos os checkpoints de todas as execuções), junte os
-    #   thread_id distintos (cp.config["configurable"]["thread_id"]) e, para cada um, imprima
-    #   app.get_state(config_de(tid)).next -- quem tem `next` não vazio está pausado (e ONDE).
-    #   Referência: aula7/exemplos/04_persistencia/main.py (get_state, get_state_history)
-    raise NotImplementedError("ETAPA 8.4: listar_pendentes")
+    """(PRONTO) Cada execução (thread_id) que está no checkpointer e onde ela parou. Quem tem `next` não vazio está
+    PAUSADO esperando um humano. É o get_state() da aula7/exemplos/04_persistencia/main.py, para todas as execuções."""
+    vistos = []
+    for checkpoint in checkpointer.list(None):  # todos os checkpoints de todas as execuções
+        thread_id = checkpoint.config["configurable"]["thread_id"]
+        if thread_id not in vistos:
+            vistos.append(thread_id)
+    for thread_id in vistos:
+        proximo = app.get_state(config_de(thread_id)).next
+        print(f"{thread_id}: {'PAUSADO em ' + str(proximo) if proximo else 'concluído'}")
 
 
 def retomar(app, thread_id: str, resposta: str, quem: str) -> None:

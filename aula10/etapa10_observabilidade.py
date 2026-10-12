@@ -3,7 +3,7 @@ ETAPA 10 -- Observabilidade (15 min): onde o tempo foi gasto e quanto custou, po
 
 ESQUELETO:
   ETAPA 10.2 -- medido(): embrulha um nó, mede o tempo e grava uma linha em saidas/metricas.jsonl
-  ETAPA 10.3 -- resumo(): nós percorridos, tempo total, nó mais lento e tokens totais de uma execução
+  (PRONTO)   -- resumo(): nós percorridos, tempo total, nó mais lento e tokens totais de uma execução
   (ETAPA 10.1 fica em etapa10_governanca.py: o hook do 🆕 B ganha um segundo papel, registrar)
 
 Até você fazer a 10.2, medido() devolve o nó sem mudar nada: o grafo funciona igual.
@@ -37,9 +37,18 @@ def medido(nome: str, no):
 
 
 def resumo(thread_id: str) -> dict:
-    # ETAPA 10.3 -- leia ARQUIVO_METRICAS, filtre pelo thread_id e devolva
-    #   {"nos": [...], "segundos_total": ..., "mais_lento": (no, segundos), "tokens_total": ...}
-    raise NotImplementedError("ETAPA 10.3: resumo")
+    """(PRONTO) Junta as linhas de ARQUIVO_METRICAS de uma execução. Só funciona depois que o medido() (10.2) grava."""
+    if not ARQUIVO_METRICAS.exists():
+        return {"erro": "saidas/metricas.jsonl ainda não existe: faça a ETAPA 10.2 e rode o grafo"}
+    linhas = [json.loads(l) for l in ARQUIVO_METRICAS.read_text(encoding="utf-8").splitlines() if l.strip()]
+    linhas = [l for l in linhas if l.get("thread_id") == thread_id]
+    if not linhas:
+        return {"erro": f"nenhuma métrica com thread_id={thread_id!r}"}
+    lento = max(linhas, key=lambda l: l.get("segundos", 0))
+    return {"nos": [l.get("no") for l in linhas],
+            "segundos_total": round(sum(l.get("segundos", 0) for l in linhas), 2),
+            "mais_lento": (lento.get("no"), lento.get("segundos")),
+            "tokens_total": sum(l.get("tokens", 0) or 0 for l in linhas)}
 
 
 if __name__ == "__main__":

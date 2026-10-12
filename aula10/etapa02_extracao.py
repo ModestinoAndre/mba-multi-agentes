@@ -8,8 +8,8 @@ ESQUELETO: implemente as etapas na ordem (troque cada raise NotImplementedError 
   --- daqui para baixo é OPCIONAL (item 🆕 A, vale bônus). Pule se estiver sem tempo: o resto do sistema não depende dele.
   🆕 A.1    -- INSTRUCOES_VOTANTES: 3 instruções ligeiramente diferentes
   🆕 A.2    -- extrair_com_votacao(): os 3 extratores AO MESMO TEMPO (asyncio.gather)
-  🆕 A.3    -- votar(): maioria por campo; sem maioria em tipo/datas -> divergencia=True
-  🆕 A.4    -- no __main__: compare o tempo em paralelo x em sequência
+  (PRONTO)  -- votar(): maioria por campo; sem maioria em tipo/datas -> divergencia=True
+  (PRONTO)  -- no __main__: o tempo em paralelo x em sequência
 
 REFERÊNCIAS NAS AULAS
   aula2/agente_output.py                   output_type com um BaseModel simples
@@ -109,12 +109,15 @@ async def extrair_com_votacao(texto: str) -> tuple[Pedido, bool, list[Pedido]]:
 
 
 def votar(votos: list[Pedido]) -> tuple[Pedido, bool]:
-    # 🆕 A.3 -- decida por MAIORIA os campos tipo, matricula, data_inicio, data_fim e dias_vendidos
-    #   (Counter(valores).most_common(1) ajuda). Os demais campos vêm do primeiro voto.
-    #   Se NÃO houver maioria (2 de 3) em `tipo` ou em alguma das datas: divergencia=True
-    #   (o sistema vai pedir esclarecimento em vez de adivinhar).
-    #   Devolva (Pedido decidido, divergencia). Dica: votos[0].model_copy(update={...}).
-    raise NotImplementedError("🆕 A.3: votar")
+    """(PRONTO) Maioria por campo. Sem maioria (2 de 3) em `tipo` ou nas datas -> divergencia=True: o sistema vai
+    pedir esclarecimento em vez de adivinhar. Os campos não votados vêm do primeiro voto."""
+    decidido, divergencia = {}, False
+    for campo in ("tipo", "matricula", "data_inicio", "data_fim", "dias_vendidos"):
+        valor, quantos = Counter(getattr(voto, campo) for voto in votos).most_common(1)[0]
+        decidido[campo] = valor
+        if quantos < 2 and campo in ("tipo", "data_inicio", "data_fim"):
+            divergencia = True
+    return votos[0].model_copy(update=decidido), divergencia
 
 
 def _demo_extracao() -> None:
@@ -133,9 +136,12 @@ def _demo_votacao() -> None:
         for i, voto in enumerate(votos, 1):
             print(f"  voto {i}: tipo={voto.tipo.value} {voto.data_inicio}..{voto.data_fim} vende={voto.dias_vendidos}")
         print(f"  decisão: {pedido.model_dump()}")
-    # 🆕 A.4 -- meça também os 3 extratores EM SEQUÊNCIA (um Runner.run_sync depois do outro) para o C2
-    #   e imprima os dois tempos. O paralelo fica perto do tempo de UMA chamada?
-    raise NotImplementedError("🆕 A.4: comparar tempo paralelo x sequencial")
+    # (PRONTO) os mesmos 3 extratores EM SEQUÊNCIA, para comparar: o paralelo fica perto do tempo de UMA chamada?
+    texto = CASOS["C2_ferias_com_venda"]["pedido"]
+    inicio = time.perf_counter()
+    for instrucoes in INSTRUCOES_VOTANTES:
+        Runner.run_sync(criar_extrator(instrucoes), texto)
+    print(f"\nC2 em sequência: {time.perf_counter() - inicio:.1f}s (compare com o tempo do C2 em paralelo, acima)")
 
 
 if __name__ == "__main__":

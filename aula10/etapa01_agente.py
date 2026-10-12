@@ -21,18 +21,17 @@ import json
 
 from agents import Agent, Runner, function_tool
 
-from dados_rh import carregar_servidores
+from dados_rh import servidor_publico
 from provedor import configurar
 
 MODELO = configurar()  # LLM REAL: PROVEDOR no .env (openai ou ollama)
 
 
 # ETAPA 1.1 -- a tool
-#   - leia o cadastro com carregar_servidores() e procure a matrícula;
-#   - devolva json.dumps(...) com nome, cargo, equipe, saldo_ferias_dias e abonos_restantes
-#     (NUNCA o salario_base: ele é dado restrito, ver Etapas 5 e 9), ou "matrícula não encontrada";
 #   - ponha um print("[tool] consultar_servidor", matricula) no começo, para provar quando ela roda;
-#   - capriche na DOCSTRING (com Args:): é o que o LLM lê para decidir chamar a tool.
+#   - devolva json.dumps(servidor_publico(matricula), ensure_ascii=False). A consulta servidor_publico() (dados_rh.py)
+#     já vem pronta: tira o salário (dado restrito, ver Etapas 5 e 9) e trata matrícula inexistente;
+#   - capriche na DOCSTRING (com Args:): é o que o LLM lê para decidir chamar a tool. Esse é o ponto da etapa.
 #   Referência: exercicios_resolvidos/aula4/ex10_function_tool.py (consultar_protocolo)
 @function_tool
 def consultar_servidor(matricula: str) -> str:

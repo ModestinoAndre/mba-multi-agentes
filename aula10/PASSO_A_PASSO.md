@@ -78,7 +78,7 @@ um texto é agente; uma que é **decisão de alguém** (N8, a chefia) é humano.
 
 | Lacuna | O que fazer | Onde olhar |
 |---|---|---|
-| 1.1 | Tool `consultar_servidor`: ler o cadastro, devolver `json.dumps` **sem** `salario_base`, `print` no começo, docstring com `Args:` | `exercicios_resolvidos/aula4/ex10_function_tool.py` (tool que consulta uma tabela e devolve JSON) |
+| 1.1 | Tool `consultar_servidor`: `print` no começo, **docstring com `Args:`** e `return json.dumps(servidor_publico(matricula), ensure_ascii=False)` (a consulta `servidor_publico` já vem pronta, sem o salário) | `exercicios_resolvidos/aula4/ex10_function_tool.py` (tool que consulta uma tabela) |
 | 1.2 | `criar_atendente()`: `Agent(name="AtendenteRH", instructions=..., tools=[consultar_servidor])` | `aula1/segundo_agente.py` |
 | 1.3 | `main()`: as duas perguntas com `Runner.run_sync` | `aula8/exemplos/02_agente_tool/main.py` (o agente decide quando chamar) |
 
@@ -141,16 +141,16 @@ C11_diaria_exterior
 
 | Lacuna | O que fazer | Onde olhar |
 |---|---|---|
-| 3.1 | `RE_CPF`, `RE_CID` e `encontrar_dado_sensivel()` | `exercicios_resolvidos/aula4/ex11_guardrails.py` (`_RE_RG`) |
+| (pronto) | `RE_CPF`, `RE_CID` e `encontrar_dado_sensivel()` já vêm prontos: leia e use nos guardrails | `exercicios_resolvidos/aula4/ex11_guardrails.py` (`_RE_RG`) |
 | 3.2 | `criar_classificador()` com `output_type=AvaliacaoEscopo` e exemplos de nota baixa/alta | `aula2/agente_guardrail.py` (`guardrail_agent`: **o mais parecido**) |
 | 3.3 | `nota_escopo()` | `aula2/agente_guardrail.py` |
 | 3.4 | Os dois `@input_guardrail` (o motivo vai em `output_info`) | `aula2/agente_guardrail.py` (`bloquear_off_topics`) |
 | 3.5 | `main()`: tratar `InputGuardrailTripwireTriggered` e imprimir a mensagem do motivo | `aula2/agente_guardrail.py`, `aula8/exemplos/04_prompt_injection/1_codigo_pronto/main.py` |
 
-**Teste rápido da 3.1** (sem LLM) ✅
+**A regex pronta, para você ver o que ela pega** (sem LLM) ✅
 
 ```powershell
-python -c "from guardrails import encontrar_dado_sensivel as f; print(f('Estou com CID F32.1'), f('CPF 123.456.789-09'), f('férias de 12/04/2027 a 26/04/2027'))"
+python -c "from etapa03_guardrails import encontrar_dado_sensivel as f; print(f('Estou com CID F32.1'), f('CPF 123.456.789-09'), f('férias de 12/04/2027 a 26/04/2027'))"
 ```
 
 ```
@@ -250,9 +250,9 @@ mesmos feriados nacionais.
 
 | Lacuna | O que fazer | Onde olhar |
 |---|---|---|
-| 5.1 | As 5 tools de leitura. **Toda tool devolve um dict** (`consultar_normas` devolve `{"tema", "regras"}`) | `aula6/desafio2/mcp_unidades.py` (**MCP lendo CSV**), `aula5/exemplos/05_multiplas_tools/server.py` |
+| 5.1 | As 5 tools de leitura: `@mcp.tool()`, **docstring** e `return` da consulta pronta de `dados_rh.py` (`servidor_publico`, `escala_da_equipe`, `normas`, `diaria`, `remuneracao`). **Toda tool devolve um dict** | `aula6/desafio2/mcp_unidades.py` (**MCP lendo CSV**), `aula5/exemplos/05_multiplas_tools/server.py` |
 | 5.2 | `registrar_decisao()` idempotente (só a parte de gravar; a segurança é a 9.2) | `aula3/agente_retry3.py` |
-| 5.4 | `chamar_mcp_async()` (faça antes da 5.3: é mais fácil de testar) | `aula6/desafio2/main.py` (`chamar_mcp`: **o mais parecido**) |
+| (pronto) | `chamar_mcp_async()` já vem pronto (é o mesmo cliente do `aula6/desafio2/main.py`): leia para entender como o código chama uma tool sem LLM | `aula6/desafio2/main.py` (`chamar_mcp`) |
 | 5.3 | `perguntar_ao_atendente()` com `MCPServerStdio` | `aula5/exemplos/04_agente_mcp/agente.py` |
 
 **1) Teste o server sozinho no MCP Inspector** (precisa de Node.js):
@@ -264,13 +264,13 @@ npx @modelcontextprotocol/inspector python etapa05_mcp_rh.py
 No navegador: **Connect** → **Tools** → **List Tools**. Devem aparecer **6** tools: `consultar_servidor`, `consultar_escala`,
 `consultar_normas`, `tabela_diarias`, `consultar_remuneracao` e `registrar_decisao`. Chame `consultar_servidor` com `1002`.
 
-**2) Teste o cliente sem agente:**
+**2) Teste o cliente sem agente** (o `chamar_mcp` já vem pronto; quem precisa estar certo são as suas tools):
 
 ```powershell
 python etapa05_cliente_mcp.py
 ```
 
-**Saída esperada, DEPOIS das Etapas 5.1, 5.2, 5.4, 9.2 e 9.3** ✅ (com `saidas/` vazia)
+**Saída esperada, DEPOIS das Etapas 5.1, 5.2, 9.2 e 9.3** ✅ (com `saidas/` vazia)
 
 ```
 {'matricula': '1002', 'nome': 'Bruno Castro', 'cargo': 'Escrivão', 'equipe': 'Plantão A', 'saldo_ferias_dias': 30, 'abonos_restantes': 3, 'chefia': '1010'}
@@ -386,7 +386,7 @@ Faça na ordem abaixo: assim o grafo roda cedo e você testa caso a caso.
 | 7.5 (arestas) | `construir()`: as arestas do diagrama do `ENUNCIADO.md` (sem a chefia e sem a triagem ainda) | `aula6/exemplos/06_fluxo_condicional/main.py`, `aula6/exemplos/07_dag/main.py` |
 | 7.2 | `proteger_entrada` (limiar único), `no_extrair`, `identificar_servidor`, `calcular_periodo` e os roteadores | `aula6/exemplos/11_grafo_real/main.py` (nós de LLM, MCP e API), `aula6/desafio2/main.py` (**o mais parecido**) |
 | 7.3 | `no_normas`, `no_escala`, `no_financeiro` e `consolidar` | `aula7/exemplos/08_paralelismo/main.py` (fan-out/fan-in por lista), `aula7/exemplos/05_equipe_multiagente/main.py` |
-| 7.4 | `redigir_despacho`, `validar`, `rotear_validacao` | `aula6/exemplos/08_fluxo_ciclico/main.py` (ciclo com parada) |
+| 7.4 | `redigir_despacho`, `validar` (usa a `problemas_do_despacho()`, já pronta, e conta as tentativas) e `rotear_validacao` | `aula6/exemplos/08_fluxo_ciclico/main.py` (ciclo com parada) |
 | 7.5 (registrar) | `registrar()` chamando `registrar_decisao` no MCP | `aula6/desafio2/main.py` (`chamar_mcp` num nó) |
 
 > Até a Etapa 8, em `rotear_validacao` mande `"chefia"` também para `"registrar"`, e no `construir()` ainda não ligue
@@ -429,7 +429,7 @@ python etapa07_grafo.py C6_conflito_de_escala
 | 8.1 | Nada a escrever: o `main()` já compila com `SqliteSaver`. Leia e entenda. | `aula7/exemplos/04_persistencia/main.py` |
 | 8.2 | `aprovacao_chefia()` com `interrupt()` | `aula7/exemplos/06_human_in_the_loop/main.py`, `aula7/exemplos/07_aprovacao_revisao/main.py` (**o mais parecido**) |
 | 8.3 | `rotear_chefia()` e as arestas de `validar` → `aprovacao_chefia` → `redigir_despacho`/`registrar` | `aula7/exemplos/07_aprovacao_revisao/main.py` |
-| 8.4 | `listar_pendentes()` e `retomar()` com `Command(resume=...)` | `aula7/exemplos/04_persistencia/main.py` (`get_state`), `aula7/exemplos/06_human_in_the_loop/main.py` (`retomar`) |
+| 8.4 | `retomar()` com `Command(resume=...)` (o `listar_pendentes()` já vem pronto: leia, ele usa `get_state`) | `aula7/exemplos/06_human_in_the_loop/main.py` (`retomar`), `aula7/exemplos/04_persistencia/main.py` (`get_state`) |
 
 **1) O C2 pausa e o processo termina** ✅
 
@@ -584,7 +584,7 @@ Uma linha completa, para comparar o formato:
 |---|---|---|
 | 10.1 | Em `etapa10_governanca.py`, `on_tool_end` e `on_agent_end` acrescentam a `self.eventos` (tool, argumentos, resultado, tokens); passe `hooks=Governanca()` nos `rodar_com_limites_sync` dos nós | `aula3/agente_hook2.py`, `aula5/exemplos/11_observabilidade/agente_observavel.py` |
 | 10.2 | `medido()`: tempo por nó numa linha de `saidas/metricas.jsonl` | `aula8/exemplos/03_observabilidade/1_codigo_pronto/passo1_trace.py` (a ideia de span por etapa) |
-| 10.3 | `resumo(thread_id)` | (leitura do JSONL) |
+| (pronto) | `resumo(thread_id)` já vem pronto: ele lê o JSONL que o seu `medido()` grava | |
 
 ```powershell
 python etapa07_grafo.py C2_ferias_com_venda
@@ -706,8 +706,8 @@ faça-os só se terminou a Etapa 9 (ou a 11) e sobrou tempo. Cada um vale até +
 |---|---|---|
 | A.1 | 3 instruções diferentes em `INSTRUCOES_VOTANTES` | (contexto novo, sem exemplo) |
 | A.2 | `extrair_com_votacao()`: `await asyncio.gather(*(Runner.run(e, texto) for e in extratores))` | `aula7/exemplos/08_paralelismo/main.py` (o conceito: fan-out/fan-in); `aula3/agente_parada3.py` (`Runner.run` com `asyncio`) |
-| A.3 | `votar()`: maioria com `Counter(...).most_common(1)`; sem maioria em tipo/datas → `divergencia=True` | (contexto novo) |
-| A.4 | Medir o tempo dos 3 em sequência para o C2 | `aula7/exemplos/08_paralelismo/main.py` (medição de tempo) |
+| (pronto) | `votar()` (maioria por campo, divergência sem maioria) já vem pronto: leia | |
+| (pronto) | a medição do tempo em sequência já vem pronta no `_demo_votacao` | |
 
 ```powershell
 python etapa02_extracao.py --votacao
