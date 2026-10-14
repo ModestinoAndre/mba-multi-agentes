@@ -71,4 +71,14 @@ def configurar() -> str:
         set_default_openai_api("chat_completions")  # o Ollama não implementa a Responses API
         return f"ollama:{modelo}"
 
+    if provedor == "openrouter":
+        chave = os.getenv("OPENAI_API_KEY")
+        if not chave:
+            raise SystemExit("PROVEDOR=openrouter exige OPENAI_API_KEY.\n" + AJUDA)
+        base_url = "https://openrouter.ai/api/v1"
+        modelo = os.getenv("OPENAI_DEFAULT_MODEL", "gpt-4o-mini")
+        os.environ["OPENAI_DEFAULT_MODEL"] = modelo  # é o modelo que todo Agent(...) usa quando não recebe `model`
+        set_default_openai_client(_cliente(base_url, chave))
+        return f"openrouter:{modelo}"
+
     raise SystemExit(f"PROVEDOR desconhecido: {provedor!r}. Use openai ou ollama.")

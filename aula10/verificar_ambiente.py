@@ -82,6 +82,12 @@ if provedor == "openai":
         ok(f"OPENAI_API_KEY preenchida (termina em ...{chave[-4:]})")
     else:
         erro("OPENAI_API_KEY vazia ou com formato estranho no .env")
+if provedor == "openrouter":
+    chave = os.getenv("OPENAI_API_KEY", "")
+    if chave.startswith("sk-") and len(chave) > 20:
+        ok(f"OPENAI_API_KEY preenchida (termina em ...{chave[-4:]})")
+    else:
+        erro("OPENAI_API_KEY vazia ou com formato estranho no .env")
 elif provedor == "ollama":
     ok(f"Ollama em {os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434/v1')}, modelo {os.getenv('OLLAMA_MODEL', 'llama3.1')}")
 else:
