@@ -70,27 +70,62 @@ class Pedido(BaseModel):
     tipo: TipoPedido = Field(description=(
         "Tipo do pedido: 'ferias' (descanso anual, pode incluir venda de dias), 'abono' (folga de 1 dia útil), "
         "'diaria' (viagem a serviço), 'licenca_saude' (afastamento por doença) ou 'outro'."))
+    matricula: str | None = Field(default=None, description=(
+        "Matrícula funcional do servidor, só os 4 dígitos (ex.: '1002'). "
+        "null se o servidor não informou a matrícula no texto; nunca invente."))
+    data_inicio: str | None = Field(default=None, description=(
+        "Primeiro dia do afastamento ou da viagem, no formato AAAA-MM-DD. "
+        "null se o servidor não disse o DIA exato: só um mês ('em agosto') ou algo vago ('perto da Páscoa') -> null. "
+        "Nunca use o primeiro dia do mês para preencher."))
+    data_fim: str | None = Field(default=None, description=(
+        "Último dia do afastamento ou da viagem, no formato AAAA-MM-DD. No abono (1 dia), igual à data_inicio. "
+        "null se o servidor não disse o DIA exato: só um mês ('em agosto') -> null; nunca use o último dia do mês, "
+        "e não calcule a partir de 'uns dez dias'."))
+    dias_vendidos: int = Field(default=0, ge=0, le=10, description=(
+        "Dias de férias vendidos (abono pecuniário, regra N2), de 0 a 10. "
+        "Só preencha se o servidor pedir EXPLICITAMENTE para vender um número de dias; caso contrário, 0."))
+    destino: str | None = Field(default=None, description=(
+        "Só para diária: a cidade de destino da viagem a serviço (ex.: 'Buenos Aires'). null nos demais tipos."))
+    tipo_destino: TipoDestino | None = Field(default=None, description=(
+        "Só para diária: 'capital' (capital brasileira), 'interior' (cidade brasileira que não é capital) "
+        "ou 'exterior' (fora do Brasil). null nos demais tipos."))
+    justificativa: str = Field(default="", description=(
+        "Resumo curto do motivo do pedido, em português. NÃO inclua CPF, CID, diagnóstico ou outro dado de saúde."))
 
 
 def criar_extrator(instrucoes: str, input_guardrails: list | None = None) -> Agent:
     # ETAPA 2.2 -- devolva Agent(name="Extrator", instructions=instrucoes, output_type=Pedido,
     #   input_guardrails=input_guardrails or [])
     #   (os guardrails só entram na Etapa 3; até lá, a lista fica vazia)
-    raise NotImplementedError("ETAPA 2.2: criar_extrator")
+    return Agent(name="Extrator",
+                 instructions=instrucoes,
+                 output_type=Pedido,
+                 input_guardrails=input_guardrails or [])
 
 
 INSTRUCOES_EXTRATOR = (
     f"Hoje é {texto_hoje()}. "  # (PRONTO) a data real: o modelo não tem relógio (aula3/agente_retry.py)
     "Você extrai pedidos de servidores para o RH (férias, abono ou diária). "
-    "TODO ETAPA 2.2: complete -- datas no formato AAAA-MM-DD, não invente o que não foi dito (use null), "
-    "dias vendidos só se o servidor pedir explicitamente."
+    "Preencha os campos do pedido a partir do texto do servidor. "
+    "Datas sempre no formato AAAA-MM-DD; quando o ano não for dito, use o próximo ano em que a data ainda não passou. "
+    "Não invente o que não foi dito: matrícula ou datas ausentes ou vagas ficam null. "
+    "Só existe data quando o servidor diz o DIA: 'em agosto de 2027' NÃO é data (data_inicio e data_fim = null). "
+    "No abono (1 dia), data_fim = data_inicio. "
+    "dias_vendidos só se o servidor pedir explicitamente para vender dias; senão, 0. "
+    "destino e tipo_destino só para diária (viagem a serviço). "
+    "A justificativa é um resumo curto, sem CPF nem dado de saúde."
 )
+
+
+ULTIMO_USO = {"tokens": 0}  # ETAPA 10: tokens da última extração, lidos pelo nó extrair do grafo
 
 
 def extrair(texto: str) -> Pedido:
     # ETAPA 2.3 -- rode criar_extrator(INSTRUCOES_EXTRATOR) com Runner.run_sync e devolva final_output
     #   (é um objeto Pedido, não texto!)
-    raise NotImplementedError("ETAPA 2.3: extrair")
+    resultado = Runner.run_sync(criar_extrator(INSTRUCOES_EXTRATOR), texto)
+    ULTIMO_USO["tokens"] = resultado.context_wrapper.usage.total_tokens
+    return resultado.final_output
 
 
 # ------------------------------------------------------------------ 🆕 A: votação (OPCIONAL, bônus)
