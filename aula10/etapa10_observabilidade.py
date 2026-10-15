@@ -33,7 +33,30 @@ def medido(nome: str, no):
     #      e, se o nó devolveu, "tokens" e "fonte_feriados";
     #   3. devolve o MESMO dicionário que o nó devolveu.
     #   Use @functools.wraps(no) para o nome do nó continuar o mesmo.
-    return no  # pass-through: troque pelo wrapper
+    @functools.wraps(no)
+    def embrulhado(estado):
+        linha = {"thread_id": estado.get("thread_id"), "no": nome}
+        inicio = time.perf_counter()
+        try:
+            saida = no(estado)
+        except BaseException as erro:  # inclui o GraphInterrupt do interrupt(): a pausa também é medida
+            linha["segundos"] = round(time.perf_counter() - inicio, 3)
+            linha["interrompido"] = type(erro).__name__
+            _gravar(linha)
+            raise
+        linha["segundos"] = round(time.perf_counter() - inicio, 3)
+        if isinstance(saida, dict):
+            for chave in ("tokens", "fonte_feriados", "cambio_api", "eventos"):
+                if saida.get(chave) is not None:
+                    linha[chave] = saida[chave]
+        _gravar(linha)
+        return saida
+    return embrulhado
+
+
+def _gravar(linha: dict) -> None:
+    with open(ARQUIVO_METRICAS, "a", encoding="utf-8") as arquivo:
+        arquivo.write(json.dumps(linha, ensure_ascii=False, default=str) + "\n")
 
 
 def resumo(thread_id: str) -> dict:
