@@ -40,48 +40,21 @@ Compare **caminho e estado**, não o texto do despacho.
 
 ## O grafo
 
+```mermaid
+%% cole aqui a saída de: python etapa07_grafo.py --mermaid
+```
 
 ## Etapa 4 (pronta): o que eu entendi
 
-- Diferença entre a saída online e a offline: online, os feriados vêm da BrasilAPI em ~0,2 s (`fonte: brasilapi`) e a
-  cotação é real (ex.: 5.0242). Offline, aparecem as 3 tentativas `[retry]`, os feriados vêm do plano B local
-  (`fonte: arquivo_local`) depois de ~1,5 s (as esperas 0,5 s + 1 s do backoff) e a cotação é `None` ("a calcular", sem
-  inventar câmbio). As contas de datas e o protocolo saem iguais nos dois modos. Detalhe: a API devolve 14 feriados e o
-  arquivo local 13; a diferença é o Carnaval (08/02/2027, ponto facultativo), que não afeta nenhum caso de teste.
-- O que mudou em relação aos exemplos das aulas:
-  - `texto_hoje()` (aula3/agente_retry.py): mesma ideia de injetar `date.today()`, agora com o dia da semana por extenso.
-  - `get_json_com_retry()` (aula3/agente_retry2.py): mesmo backoff `espera_base * 2**(n-1)`, mas genérico (qualquer URL),
-    com `urllib` em vez de `requests`, `User-Agent` e um modo `FERIADOS_OFFLINE` para simular a queda.
-  - `buscar_feriados()` (aula6/exemplos/11_grafo_real): mesma API e plano B local, agora com retry e **cache** por ano, e
-    a fonte `"indisponivel"` para anos sem cópia local.
-  - `cotacao_usd_brl()` (aula3/agente_retry4.py): mesma API Frankfurter, mas devolve `None` em vez de lançar erro.
-  - `gerar_protocolo()` (aula3/agente_retry3.py): mesmo SHA-256, mas com os campos **normalizados** (`strip().lower()`,
-    `None` vira `""`) e cortado em 8 caracteres.
-  - `rodar_com_limites()` (aula3/agente_parada3.py): mesmo `wait_for` + `max_turns`, mas em vez de imprimir lança erros
-    próprios (`TempoEsgotado`, `LoopExcedido`) para quem chama decidir o que fazer, e tem uma versão síncrona para os nós.
-- Por que a espera do retry dobra a cada tentativa: se a API caiu ou está sobrecarregada, tentar de novo na hora só
-  aumenta a carga e falha de novo. Dobrar a espera (0,5 s, 1 s, 2 s...) dá tempo para o serviço se recuperar, sem
-  martelar o servidor, e mantém o tempo total limitado (poucas tentativas, depois o plano B).
-- Por que o protocolo é um hash dos campos (e não um número sequencial): o hash é **determinístico**: o mesmo pedido
-  (matrícula, tipo, datas) sempre gera o mesmo protocolo (C1 e C8 = `ae788d33`), em qualquer processo e sem consultar
-  um contador central. Assim, um reenvio ou um retry não cria um registro duplicado: o server vê que o protocolo já
-  existe (idempotência). Um número sequencial geraria um protocolo novo a cada tentativa.
-- O que aconteceria sem o cache de feriados: `dias_uteis()` e `inicio_permitido()` perguntam dia a dia se é útil, então
-  cada dia do período viraria uma chamada à BrasilAPI (15 chamadas só no C2). Seria lento, arriscaria bloqueio por excesso
-  de requisições e, offline, cada dia pagaria as 3 tentativas com backoff (~1,5 s por dia).
+- Diferença entre a saída online e a offline:
+- Por que a espera do retry dobra a cada tentativa:
+- Por que o protocolo é um hash dos campos (e não um número sequencial):
+- O que aconteceria sem o cache de feriados:
 
 ## Observabilidade (C2)
 
-- Onde o tempo foi gasto: ~18,7 s somando os nós (`python etapa10_observabilidade.py C2_ferias_com_venda`). Quase
-  tudo nos nós com LLM: `normas` (4,0 s, o mais lento, chamou `consultar_normas` 2 vezes), `financeiro` (3,7 s),
-  `proteger_entrada` (3,2 s), `redigir_despacho` (2,8 s), `extrair` (2,3 s) e `escala` (1,2 s). Os nós de MCP/API
-  (`identificar_servidor`, `calcular_periodo`, `registrar`) levam ~0,4–0,6 s cada, porque cada `chamar_mcp` sobe o
-  server de novo; os nós em Python puro (`consolidar`, `validar`) ~0 s. Como `normas`, `escala` e `financeiro` rodam em
-  paralelo, o tempo real de parede é menor que a soma (o passo paralelo custa ~4 s, não ~8,9 s).
-  `aprovacao_chefia` aparece duas vezes: a 1ª termina em `GraphInterrupt` (a pausa) e a 2ª é a retomada em outro
-  processo; a espera pela chefia não entra na conta. Feriados vieram da `brasilapi`.
-- Tokens totais: 6.841 (normas 1.964, financeiro 1.520, extrair 1.091, redigir_despacho 1.079, escala 607,
-  proteger_entrada 580).
+- Onde o tempo foi gasto:
+- Tokens totais: ___
 
 ## Opcionais (preencha só os que fez)
 
